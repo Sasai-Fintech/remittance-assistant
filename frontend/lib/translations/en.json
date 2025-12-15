@@ -1,0 +1,56 @@
+{
+  "common": {
+    "newSession": "New Session",
+    "history": "History",
+    "send": "Send",
+    "close": "Close",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "chat": {
+    "placeholder": "Message EcoCash...",
+    "suggestions": {
+      "checkBalance": "Check my balance",
+      "viewTransactions": "View recent transactions",
+      "showInsights": "Show financial insights",
+      "getHelp": "Get more help"
+    }
+  },
+  "widgets": {
+    "balance": {
+      "title": "Wallet Balance",
+      "available": "Available Balance",
+      "currency": "Currency"
+    },
+    "transactions": {
+      "title": "Transaction History",
+      "date": "Date",
+      "merchant": "Merchant",
+      "description": "Description",
+      "amount": "Amount",
+      "type": "Type",
+      "noTransactions": "No transactions found"
+    },
+    "ticket": {
+      "title": "Support Ticket",
+      "ticketId": "Ticket ID",
+      "subject": "Subject",
+      "status": "Status",
+      "created": "Created",
+      "type": "Type"
+    },
+    "confirmation": {
+      "title": "Confirm Support Ticket",
+      "message": "Are you sure you want to create this support ticket?",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    }
+  },
+  "session": {
+    "newSession": "New Session",
+    "sessionHistory": "Session History",
+    "noSessions": "No previous sessions"
+  }
+}
+

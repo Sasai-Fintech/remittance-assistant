@@ -1,0 +1,56 @@
+{
+  "common": {
+    "newSession": "Chikamu Chitsva",
+    "history": "Nhoroondo",
+    "send": "Tumira",
+    "close": "Vhara",
+    "loading": "Kuronga...",
+    "error": "Kukanganisa",
+    "success": "Kubudirira"
+  },
+  "chat": {
+    "placeholder": "Tumira meseji kuEcoCash...",
+    "suggestions": {
+      "checkBalance": "Tarisa mari yangu",
+      "viewTransactions": "Ona zvishandiswa zvichangobva",
+      "showInsights": "Ratidza ruzivo rwemari",
+      "getHelp": "Wana rubatsiro rwakawanda"
+    }
+  },
+  "widgets": {
+    "balance": {
+      "title": "Mari yeHomwe",
+      "available": "Mari Inowanikwa",
+      "currency": "Mari"
+    },
+    "transactions": {
+      "title": "Nhoroondo yeZvishandiswa",
+      "date": "Zuva",
+      "merchant": "Mutengesi",
+      "description": "Tsananguro",
+      "amount": "Mari",
+      "type": "Rudzi",
+      "noTransactions": "Hapana zvishandiswa zvawanikwa"
+    },
+    "ticket": {
+      "title": "Tikiti yeRubatsiro",
+      "ticketId": "ID yeTikiti",
+      "subject": "Musoro",
+      "status": "Mamiriro",
+      "created": "Yakagadzirwa",
+      "type": "Rudzi"
+    },
+    "confirmation": {
+      "title": "Simbisa Tikiti yeRubatsiro",
+      "message": "Une chokwadi here kuti unoda kugadzira tikiti yerubatsiro iyi?",
+      "confirm": "Simbisa",
+      "cancel": "Kanzura"
+    }
+  },
+  "session": {
+    "newSession": "Chikamu Chitsva",
+    "sessionHistory": "Nhoroondo yeZvikamu",
+    "noSessions": "Hapana zvikamu zvakapfuura"
+  }
+}
+

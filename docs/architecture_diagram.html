@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecocash Assistant Architecture</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 2rem;
+            background-color: #f9fafb;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #111827;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Ecocash Assistant System Architecture</h1>
+        <div class="mermaid">
+            graph TD
+            %% Styles
+            classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000;
+            classDef backend fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000;
+            classDef mcp fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px,color:#000;
+            classDef external fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000;
+            classDef database fill:#eceff1,stroke:#455a64,stroke-width:2px,stroke-dasharray: 5 5,color:#000;
+
+            subgraph Client_Device [User Device]
+            Browser[Web Browser / Mobile App]:::frontend
+            end
+
+            subgraph Frontend_Service [Frontend Service - Next.js]
+            UI_Components[UI Components\n(Chat, Widgets, History)]:::frontend
+            CopilotKit_Client[CopilotKit Client SDK\n(Hooks, State, Suggestions)]:::frontend
+            Next_API[Next.js API Routes\n(/api/copilotkit)]:::frontend
+            end
+
+            subgraph Backend_Service [Backend Service - FastAPI + LangGraph]
+            API_Endpoint[FastAPI Endpoint\n(/api/copilotkit)]:::backend
+
+            subgraph Agent_Engine [LangGraph Agent Engine]
+            direction TB
+            Intent_Node[Intent Detection Node]:::backend
+            Chat_Node[Chat Node\n(General Conversation)]:::backend
+
+            subgraph Workflows [Specialized Workflows]
+            Txn_Help[Transaction Help Graph]:::backend
+            Insights[Financial Insights Graph]:::backend
+            Refund[Refund Graph]:::backend
+            Loan[Loan Enquiry Graph]:::backend
+            end
+
+            Router[Workflow Router]:::backend
+            HITL[Human-in-the-Loop\n(Ticket Confirmation)]:::backend
+            end
+
+            MCP_Client[MCP Client Utility]:::backend
+            end
+
+            subgraph MCP_Service [MCP Server - mcp-ecocash]
+            MCP_Server[FastMCP Server]:::mcp
+
+            subgraph Tools [Tool Capabilities]
+            Wallet_Tools[Wallet Tools\n(Balance, Transactions)]:::mcp
+            Insight_Tools[Insight Tools\n(Cash Flow, Spending)]:::mcp
+            Support_Tools[Support Tools\n(Create Ticket)]:::mcp
+            end
+            end
+
+            subgraph External_Services [External Infrastructure]
+            LLM[OpenAI LLM\n(GPT-4o-mini)]:::external
+            DB[(MongoDB\nSession Persistence)]:::database
+            end
+
+            %% Data Flow Connections
+            Browser <-->|"HTTPS / WebSocket"| UI_Components
+                UI_Components <-->|"React Context"| CopilotKit_Client
+                    CopilotKit_Client <-->|"HTTP POST"| Next_API
+                        Next_API <-->|"HTTP Proxy"| API_Endpoint
+
+                            API_Endpoint --> Agent_Engine
+
+                            %% Agent Flow
+                            Agent_Engine <-->|"State Persistence"| DB
+                                Agent_Engine <-->|"Inference API"| LLM
+
+                                    %% Internal Agent Routing
+                                    Intent_Node --> Router
+                                    Router --> Chat_Node
+                                    Router --> Workflows
+                                    Workflows --> Chat_Node
+                                    Chat_Node --> HITL
+
+                                    %% MCP Integration
+                                    Chat_Node -- "Tool Calls" --> MCP_Client
+                                    MCP_Client <-->|"SSE (Server-Sent Events)"| MCP_Server
+                                        MCP_Server --> Tools
+
+                                        %% Legend
+                                        linkStyle default stroke:#333,stroke-width:1px;
+        </div>
+    </div>
+
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</body>
+
+</html>

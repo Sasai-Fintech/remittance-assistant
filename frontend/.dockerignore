@@ -1,0 +1,28 @@
+# Dependencies
+node_modules
+
+# Build outputs
+.next
+dist
+build
+coverage
+.nyc_output
+
+# Git
+.git
+
+# Documentation
+*.md
+!README.md
+
+# OS files
+.DS_Store
+
+# Environment files
+.env.local
+.env*.local
+
+# Build info
+.next/cache
+tsconfig.tsbuildinfo
+

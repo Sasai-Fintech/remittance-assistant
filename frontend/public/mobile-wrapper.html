@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoCash Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <iframe id="app-iframe" src="http://localhost:3000"></iframe>
+    
+    <script>
+        const iframe = document.getElementById('app-iframe');
+        
+        // Extract parameters from URL (simulating Flutter passing data)
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token'); // JWT token for user authentication
+        const sasaiToken = urlParams.get('sasaiToken') || urlParams.get('sasai_token'); // Sasai Payment Gateway authentication token
+        const userId = urlParams.get('userId') || urlParams.get('user_id');
+        const transactionId = urlParams.get('transactionId') || urlParams.get('transaction_id');
+        const contextParam = urlParams.get('context');
+        
+        // Wait for iframe to load before sending messages
+        iframe.addEventListener('load', function() {
+            console.log('✅ EcoCash Assistant loaded in iframe');
+            
+            // Wait a bit longer to ensure React and CopilotKit are fully initialized
+            setTimeout(() => {
+                // Send JWT token if provided via URL, otherwise use default for testing
+                const tokenToSend = token ? decodeURIComponent(token) : 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIxWVhKUzd2bDNLbThtM2pKRUs5OVN4T2ljWVhBd2tUX0FnMTlmYUdDWmNZIn0.eyJleHAiOjE3NjQ2NzQ0MjUsImlhdCI6MTc2NDY3MzUyNSwianRpIjoiMTJhOWRjMDYtMzU4My00ZjhhLWE2MWMtNjEwZmMyYzhiMDA2IiwiaXNzIjoiaHR0cHM6Ly9zYW5kYm94LWF1dGhuZXcuc2FzYWlwYXltZW50Z2F0ZXdheS5jb20vcmVhbG1zL3Nhc2FpIiwiYXVkIjpbInNhc2FpLWFwaS1jbGllbnQiLCJhY2NvdW50Il0sInN1YiI6IjkyZDJmZjk4LWJiZTAtNGE5Yy1iNGVhLWNjMzQ3Y2JjNzg0OSIsInR5cCI6IkJlYXJlciIsImF6cCI6InNhc2FpLXBheS1jbGllbnQiLCJzaWQiOiI0Nzg4OGRkNC1mMTcxLTQ3YTYtYWNjZC00MDcyMTZiOGY3NTIiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHBzOi8vZGV2LnNhc2FpcGF5bWVudGdhdGV3YXkuY29tIiwiaHR0cHM6Ly9zYW5kYm94LnNhc2FpcGF5bWVudGdhdGV3YXkuY29tIiwiaHR0cHM6Ly9zdGFnaW5nLnNhc2FpcGF5bWVudGdhdGV3YXkuY29tIiwiaHR0cDovL2xvY2FsaG9zdDozMDAwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwic2FzYWktcGF5LXVzZXIiLCJzYXNhaS1leHBsb3JlLWNvbi11c2VyIiwiZGVmYXVsdC1yb2xlcy1zYXNhaSJdfSwic2NvcGUiOiJvcGVuaWQgb2ZmbGluZV9hY2Nlc3MgZW1haWwgNTI4Njk3NTAtNGU2Zi00YmI5LTlkNDUtY2M0MDFmMGRhMTIzIG1pZDEgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJjb3VudHJ5Q29kZSI6IlpXIiwibmFtZSI6InN1bmlsIHN1bmlsIiwiY3VzdG9tZXJJZCI6IjI0MjMwNDk0LWU3MTUtNDA3My05N2UyLTgwMmY0OTA3Nzg3YyIsInRlbmFudElkIjoic2FzYWkiLCJtaWQiOiI1Mjg2OTc1MC00ZTZmLTRiYjktOWQ0NS1jYzQwMWYwZGExMjMiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiIyNDIzMDQ5NC1lNzE1LTQwNzMtOTdlMi04MDJmNDkwNzc4N2MiLCJnaXZlbl9uYW1lIjoic3VuaWwiLCJmYW1pbHlfbmFtZSI6InN1bmlsIiwiZW1haWwiOiJzdW5pbGRld25hMEBnbWFpbC5jb20ifQ.nwA8Sy0aG8FoTcFZEtOV95KAwU-h6I8xFkph1bOTWGxnxehV03MqWy75KEiCFVyfSC-2sab-Ku6Gsf-DPukMUQ8l3Y0Bdyr9OydkyKw93OYlDUsAISG_0fISa35tEPb3VuAep9bet60KEsa9MkDiFAEjhX2YyRuFdR1nAP5iUJCBj5-KDLKiFRUoXm9J0wlUI1tJt6rMPwQXKF5IRBrOTNIlBRT8vqC2FjCVgIFExWH4C304_LqnuZISTN9dacw4vS1jz0bKx0p1yxABLdOLB5VGRnD-TvIjpoGsKF8te817ed4JEmpVSEL6__Ped4UJKNw-rUDYVx90BuDc4BSTKw';
+                const userIdToSend = userId ? decodeURIComponent(userId) : 'demo_user';
+                
+                // Use default Sasai token for testing if not provided via URL
+                const sasaiTokenToSend = sasaiToken 
+                    ? decodeURIComponent(sasaiToken) 
+                    : 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIxWVhKUzd2bDNLbThtM2pKRUs5OVN4T2ljWVhBd2tUX0FnMTlmYUdDWmNZIn0.eyJleHAiOjE3NjQ3Mzk3MDgsImlhdCI6MTc2NDczODgwOCwianRpIjoiOGYyOGM3ZDktZjEyMC00NDUzLWJmNDUtYjE5MzEzMjhmNzczIiwiaXNzIjoiaHR0cHM6Ly9zYW5kYm94LWF1dGhuZXcuc2FzYWlwYXltZW50Z2F0ZXdheS5jb20vcmVhbG1zL3Nhc2FpIiwiYXVkIjpbInNhc2FpLWFwaS1jbGllbnQiLCJhY2NvdW50Il0sInN1YiI6IjkyZDJmZjk4LWJiZTAtNGE5Yy1iNGVhLWNjMzQ3Y2JjNzg0OSIsInR5cCI6IkJlYXJlciIsImF6cCI6InNhc2FpLXBheS1jbGllbnQiLCJzaWQiOiIyMGUwYTNmZC05ZGZmLTQ5YWItYTAxOS0zZmNiODRhZDE5ZTMiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHBzOi8vZGV2LnNhc2FpcGF5bWVudGdhdGV3YXkuY29tIiwiaHR0cHM6Ly9zYW5kYm94LnNhc2FpcGF5bWVudGdhdGV3YXkuY29tIiwiaHR0cHM6Ly9zdGFnaW5nLnNhc2FpcGF5bWVudGdhdGV3YXkuY29tIiwiaHR0cDovL2xvY2FsaG9zdDozMDAwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwic2FzYWktcGF5LXVzZXIiLCJzYXNhaS1leHBsb3JlLWNvbi11c2VyIiwiZGVmYXVsdC1yb2xlcy1zYXNhaSJdfSwic2NvcGUiOiJvcGVuaWQgb2ZmbGluZV9hY2Nlc3MgZW1haWwgNTI4Njk3NTAtNGU2Zi00YmI5LTlkNDUtY2M0MDFmMGRhMTIzIG1pZDEgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJjb3VudHJ5Q29kZSI6IlpXIiwibmFtZSI6InN1bmlsIHN1bmlsIiwiY3VzdG9tZXJJZCI6IjI0MjMwNDk0LWU3MTUtNDA3My05N2UyLTgwMmY0OTA3Nzg3YyIsInRlbmFudElkIjoic2FzYWkiLCJtaWQiOiI1Mjg2OTc1MC00ZTZmLTRiYjktOWQ0NS1jYzQwMWYwZGExMjMiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiIyNDIzMDQ5NC1lNzE1LTQwNzMtOTdlMi04MDJmNDkwNzc4N2MiLCJnaXZlbl9uYW1lIjoic3VuaWwiLCJmYW1pbHlfbmFtZSI6InN1bmlsIiwiZW1haWwiOiJzdW5pbGRld25hMEBnbWFpbC5jb20ifQ.HVIwH-UvUKiugR-JLn3wEIDO1lPKl9sTdqMSvrXrf60zUREaZLXVxfBHTF8TfG5jELScj24jUEA2X4xfP7ZaUzT3DlV2AIV5D28xOdHkPETNPDUZsPmmGuKUliuNO3zAy1QP1EtcU3Gg_LzAyXq2W7nAuWkZNzKxuOZMvBMaPEkUrOXf2PvOSVPFDJNn1S2kH8gONJ0teyIxtqhpvr2zyL6L3tnpH50oGZAU6iQWJ2IKjAso-hJnzs9P_HQxOQjvQAwU9KNUw-bqUxjArq5GtlE2CwXqLcIXfBosELHh0PoF1kiGkY_1stea6B70SuMB2dkgHKd75cqmVd3Wib647Q'; // Default Sasai token for testing
+                
+                const tokenMessage = {
+                    type: 'SET_TOKEN',
+                    token: tokenToSend,
+                    userId: userIdToSend,
+                    sasaiToken: sasaiTokenToSend, // Always include Sasai token (from URL or default)
+                    timestamp: Date.now()
+                };
+                
+                iframe.contentWindow.postMessage(tokenMessage, '*');
+                console.log('📤 JWT token sent to widget', token ? '(from URL)' : '(default for testing)');
+                if (sasaiToken) {
+                    console.log('📤 Sasai token sent to widget (from URL)');
+                }
+                
+                // Send context if provided
+                if (contextParam) {
+                    try {
+                        const context = JSON.parse(decodeURIComponent(contextParam));
+                        const contextMessage = {
+                            type: 'SET_CONTEXT',
+                            context: {
+                                ...context,
+                                channel: 'mobile',
+                                timestamp: Date.now()
+                            }
+                        };
+                        
+                        iframe.contentWindow.postMessage(contextMessage, '*');
+                        console.log('📤 Context sent to widget');
+                    } catch (error) {
+                        console.error('❌ Error parsing context JSON:', error);
+                    }
+                }
+                
+                // Trigger transaction help if transaction ID provided
+                // Wait longer to ensure CopilotKit is fully initialized
+                if (transactionId) {
+                    setTimeout(() => {
+                        const transactionMessage = {
+                            type: 'TRANSACTION_HELP',
+                            transactionId: decodeURIComponent(transactionId),
+                            timestamp: Date.now()
+                        };
+                        
+                        iframe.contentWindow.postMessage(transactionMessage, '*');
+                        console.log('📤 Transaction help triggered:', transactionMessage.transactionId);
+                    }, 1500); // Increased delay to ensure CopilotKit is ready
+                }
+            }, 1000); // Increased initial delay
+        });
+        
+        // Listen for messages from iframe (for future bidirectional communication)
+        window.addEventListener('message', function(event) {
+            // Security: In production, verify event.origin
+            if (event.data && event.data.type === 'NAVIGATE') {
+                console.log('🔗 Navigation request from UI:', event.data);
+                // In Flutter, this would trigger native navigation
+            }
+        });
+    </script>
+</body>
+</html>
