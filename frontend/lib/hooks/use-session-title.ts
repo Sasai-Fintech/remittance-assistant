@@ -43,7 +43,7 @@ export function useSessionTitle(threadId: string | null) {
       try {
         setLoading(true);
         // NEXT_PUBLIC_BASE_PATH is embedded at build time
-        // In production with basePath set, this will be '/ecocash-assistant'
+        // In production with basePath set, this will be '/remittance-assistant'
         // In development without basePath, this will be ''
         const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
         const apiUrl = `${basePath}/api/sessions/`;

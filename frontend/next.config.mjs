@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Base path for serving the app under /ecocash-assistant
+  // Base path for serving the app under /remittance-assistant
   // This is required for ingress routing in Kubernetes
-  basePath: process.env.NODE_ENV === 'production' ? '/ecocash-assistant' : '',
+  basePath: process.env.NODE_ENV === 'production' ? '/remittance-assistant' : '',
 
   // Disable source maps in production to prevent 404 errors for .map files
   productionBrowserSourceMaps: false,

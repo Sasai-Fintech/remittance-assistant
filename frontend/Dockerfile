@@ -5,7 +5,7 @@ WORKDIR /app
 # Set NODE_ENV to production for build (ensures basePath is applied)
 ENV NODE_ENV=production
 # Set NEXT_PUBLIC_BASE_PATH for build (gets embedded in JavaScript)
-ENV NEXT_PUBLIC_BASE_PATH=/ecocash-assistant
+ENV NEXT_PUBLIC_BASE_PATH=/remittance-assistant
 
 # Copy package files
 COPY package.json ./
@@ -37,7 +37,7 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/ecocash-assistant/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD node -e "require('http').get('http://localhost:3000/remittance-assistant/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Run application
 CMD ["node", "server.js"]
