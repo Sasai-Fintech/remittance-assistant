@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "ecocash"
+name = "remittance"
 version = "0.1.0"
-description = "EcoCash Assistant Backend"
+description = "Remittance Assistant Backend"
 authors = ["Tyler Slaton <tyler@copilotkit.ai>"]
 readme = "README.md"
 

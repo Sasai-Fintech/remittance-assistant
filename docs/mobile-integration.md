@@ -1,10 +1,10 @@
 # Flutter Mobile Integration Guide
 
-This guide explains how to integrate the EcoCash Assistant Next.js UI into your Flutter mobile app using WebView with JavaScript bridge communication.
+This guide explains how to integrate the Remittance Assistant Next.js UI into your Flutter mobile app using WebView with JavaScript bridge communication.
 
 ## Overview
 
-The EcoCash Assistant UI is embedded in a Flutter WebView and communicates with the native app via JavaScript's `postMessage` API. This enables:
+The Remittance Assistant UI is embedded in a Flutter WebView and communicates with the native app via JavaScript's `postMessage` API. This enables:
 
 - **JWT Authentication**: Pass JWT tokens from Flutter to the WebView
 - **Context Passing**: Send transaction context and metadata
@@ -14,7 +14,7 @@ The EcoCash Assistant UI is embedded in a Flutter WebView and communicates with 
 
 ```
 Flutter App
-  └── WebView (EcoCash Assistant UI)
+  └── WebView (Remittance Assistant UI)
        ├── Receives: JWT token, context via postMessage
        └── Sends: Navigation requests via postMessage
 ```
@@ -22,7 +22,7 @@ Flutter App
 ## Prerequisites
 
 - Flutter app with `webview_flutter` package
-- EcoCash Assistant frontend deployed (or running locally)
+- Remittance Assistant frontend deployed (or running locally)
 - JWT token generation/management in Flutter app
 
 ## Setup
@@ -40,18 +40,18 @@ dependencies:
 
 ### 2. Create WebView Widget
 
-Create a widget to host the EcoCash Assistant:
+Create a widget to host the Remittance Assistant:
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-class EcoCashAssistantScreen extends StatefulWidget {
+class RemittanceAssistantScreen extends StatefulWidget {
   final String jwtToken;
   final String? userId;
   final Map<String, dynamic>? initialContext;
   
-  const EcoCashAssistantScreen({
+  const RemittanceAssistantScreen({
     Key? key,
     required this.jwtToken,
     this.userId,
@@ -59,10 +59,10 @@ class EcoCashAssistantScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<EcoCashAssistantScreen> createState() => _EcoCashAssistantScreenState();
+  State<RemittanceAssistantScreen> createState() => _RemittanceAssistantScreenState();
 }
 
-class _EcoCashAssistantScreenState extends State<EcoCashAssistantScreen> {
+class _RemittanceAssistantScreenState extends State<RemittanceAssistantScreen> {
   late final WebViewController _controller;
   bool _isLoading = true;
 
@@ -96,7 +96,7 @@ class _EcoCashAssistantScreenState extends State<EcoCashAssistantScreen> {
         },
       )
       ..loadRequest(
-        Uri.parse('https://your-ecocash-assistant-domain.com'), // Replace with your URL
+        Uri.parse('https://your-remittance-assistant-domain.com'), // Replace with your URL
       );
   }
 
@@ -162,7 +162,7 @@ class _EcoCashAssistantScreenState extends State<EcoCashAssistantScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('EcoCash Assistant'),
+        title: const Text('Remittance Assistant'),
       ),
       body: Stack(
         children: [
@@ -186,7 +186,7 @@ class _EcoCashAssistantScreenState extends State<EcoCashAssistantScreen> {
 Navigator.push(
   context,
   MaterialPageRoute(
-    builder: (context) => EcoCashAssistantScreen(
+    builder: (context) => RemittanceAssistantScreen(
       jwtToken: 'your-jwt-token-here',
       userId: 'user_12345',
     ),
@@ -202,7 +202,7 @@ When user clicks "Get Help" from a transaction page:
 Navigator.push(
   context,
   MaterialPageRoute(
-    builder: (context) => EcoCashAssistantScreen(
+    builder: (context) => RemittanceAssistantScreen(
       jwtToken: 'your-jwt-token-here',
       userId: 'user_12345',
       initialContext: {
@@ -388,7 +388,7 @@ Before integrating with Flutter, test the WebView communication using the HTML t
 
 1. Open `frontend/public/mobile-wrapper.html` in a browser
 2. Use the UI controls to send JWT tokens and context
-3. Verify the EcoCash Assistant receives and processes messages correctly
+3. Verify the Remittance Assistant receives and processes messages correctly
 
 ### Flutter Testing
 
@@ -448,7 +448,7 @@ class TransactionDetailsScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EcoCashAssistantScreen(
+        builder: (context) => RemittanceAssistantScreen(
           jwtToken: token,
           userId: await _getUserId(),
           initialContext: {
@@ -480,7 +480,7 @@ class TransactionDetailsScreen extends StatelessWidget {
 ## Support
 
 For issues or questions:
-- Check the [EcoCash Assistant README](../README.md)
+- Check the [Remittance Assistant README](../README.md)
 - Review the [Architecture Documentation](../docs/architecture.md)
 - Open an issue on the repository
 

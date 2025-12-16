@@ -134,15 +134,15 @@ def register_rag_tools(mcp_server) -> None:
         user_context: str = "wallet_user"
     ) -> Dict[str, Any]:
         """
-        Query the EcoCash FAQ knowledge base for answers to user questions about EcoCash services, features, policies, and general information.
+        Query the Remittance FAQ knowledge base for answers to user questions about Remittance services, features, policies, and general information.
         
-        This tool retrieves relevant document chunks from the EcoCash FAQ knowledge base,
+        This tool retrieves relevant document chunks from the Remittance FAQ knowledge base,
         returning raw content for Claude to synthesize into a comprehensive answer.
-        Use this tool for any questions about EcoCash, including: what EcoCash is, how it works,
+        Use this tool for any questions about Remittance, including: what Remittance is, how it works,
         account features, transaction limits, fees, compliance policies, and general service information.
         
         Args:
-            question: The question or query to search for (e.g., "what is ecocash", "how do I send money")
+            question: The question or query to search for (e.g., "what is remittance", "how do I send money")
             knowledge_area: Specific area of knowledge to focus on (general, financial, legal, regulatory, policy)
             user_context: Context about the user making the request
         
@@ -214,9 +214,9 @@ def register_rag_tools(mcp_server) -> None:
         policy_type: Optional[Literal["aml", "kyc", "fraud", "transaction_limits", "privacy"]] = None
     ) -> Dict[str, Any]:
         """
-        Search for wallet-specific policies, procedures, and information from the EcoCash FAQ knowledge base.
+        Search for wallet-specific policies, procedures, and information from the Remittance FAQ knowledge base.
         
-        This tool searches the EcoCash FAQ knowledge base for policies, procedures, and information
+        This tool searches the Remittance FAQ knowledge base for policies, procedures, and information
         specifically related to wallet operations, retrieving raw document chunks for Claude to analyze.
         Use this for questions about transaction limits, fees, account policies, and operational procedures.
         

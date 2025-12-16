@@ -9,7 +9,7 @@
     "success": "Success"
   },
   "chat": {
-    "placeholder": "Message EcoCash...",
+    "placeholder": "Message Remittance...",
     "suggestions": {
       "checkBalance": "Check my balance",
       "viewTransactions": "View recent transactions",

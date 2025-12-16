@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-This PR implements a comprehensive token management system that allows the EcoCash Assistant to accept external authentication tokens from mobile applications (via `mobile-wrapper.html`) while maintaining backward compatibility with the internal token manager for direct web access.
+This PR implements a comprehensive token management system that allows the Remittance Assistant to accept external authentication tokens from mobile applications (via `mobile-wrapper.html`) while maintaining backward compatibility with the internal token manager for direct web access.
 
 ## 🚀 Key Features
 
@@ -58,22 +58,22 @@ This PR implements a comprehensive token management system that allows the EcoCa
 - `frontend/lib/hooks/use-mobile-auth.ts` - Sasai token state management
 - `frontend/lib/mobile-bridge.ts` - Updated message type to include `sasaiToken`
 - `frontend/public/mobile-wrapper.html` - Token extraction and `postMessage` sending
-- `frontend/components/EcocashWidgets.tsx` - Enhanced widget rendering with better data extraction
+- `frontend/components/RemittanceWidgets.tsx` - Enhanced widget rendering with better data extraction
 
 ### MCP Server Changes
 
 #### New Files
-- `mcp-ecocash/server.py` - Unified server entry point with transport configuration
+- `mcp-remittance/server.py` - Unified server entry point with transport configuration
 
 #### Modified Files
-- `mcp-ecocash/src/auth/manager.py` - Configurable token manager with `is_enabled()` method
-- `mcp-ecocash/src/config/settings.py` - Added `USE_TOKEN_MANAGER` configuration
-- `mcp-ecocash/src/wallet/balance.py` - External token support
-- `mcp-ecocash/src/wallet/transactions.py` - External token support with retry logic
-- `mcp-ecocash/src/wallet/support.py` - External token support for ticket operations
-- `mcp-ecocash/src/database/client.py` - Added `get_order_by_id` method
-- `mcp-ecocash/src/database/tools.py` - Added `get_order_by_id` tool
-- `mcp-ecocash/src/api/client.py` - Enhanced request/response logging
+- `mcp-remittance/src/auth/manager.py` - Configurable token manager with `is_enabled()` method
+- `mcp-remittance/src/config/settings.py` - Added `USE_TOKEN_MANAGER` configuration
+- `mcp-remittance/src/wallet/balance.py` - External token support
+- `mcp-remittance/src/wallet/transactions.py` - External token support with retry logic
+- `mcp-remittance/src/wallet/support.py` - External token support for ticket operations
+- `mcp-remittance/src/database/client.py` - Added `get_order_by_id` method
+- `mcp-remittance/src/database/tools.py` - Added `get_order_by_id` tool
+- `mcp-remittance/src/api/client.py` - Enhanced request/response logging
 
 ### Infrastructure Changes
 
@@ -89,7 +89,7 @@ USE_TOKEN_MANAGER=true  # Enable/disable internal token manager
 MCP_SERVER_URL=http://localhost:8001/mcp
 ```
 
-#### MCP Server (`mcp-ecocash/.env`)
+#### MCP Server (`mcp-remittance/.env`)
 ```bash
 USE_TOKEN_MANAGER=true  # Enable/disable token manager
 MCP_TRANSPORT=http      # stdio, http, or streamable_http

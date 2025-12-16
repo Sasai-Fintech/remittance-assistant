@@ -1,6 +1,6 @@
-# EcoCash Assistant Backend
+# Remittance Assistant Backend
 
-FastAPI backend server with LangGraph agent for the EcoCash AI Assistant. The backend provides a conversational AI agent that helps users manage their wallet, view transactions, and create support tickets.
+FastAPI backend server with LangGraph agent for the Remittance AI Assistant. The backend provides a conversational AI agent that helps users manage their wallet, view transactions, and create support tickets.
 
 ## 🏗️ Architecture
 
@@ -83,7 +83,7 @@ The agent uses LangGraph with the following structure:
 
 ```
 START → chat_node → [route decision]
-                      ├─→ ecocash_tools (if tools called)
+                      ├─→ remittance_tools (if tools called)
                       └─→ END (if no tools)
 ```
 
@@ -94,7 +94,7 @@ START → chat_node → [route decision]
    - Uses Azure OpenAI GPT-4o-mini with tool binding
    - Returns AI responses with optional tool calls
 
-2. **ecocash_tools** (ToolNode):
+2. **remittance_tools** (ToolNode):
    - Executes agent tools when called
    - Tools: `get_balance`, `list_transactions`, `create_ticket`
 
@@ -126,7 +126,7 @@ Current tools (defined in `agent/tools.py`):
 ### Health Check
 
 - **GET** `/`: Health check endpoint
-  - Returns: `{"message": "Ecocash Assistant Backend is running"}`
+  - Returns: `{"message": "Remittance Assistant Backend is running"}`
 
 ## 🧪 Development
 
@@ -155,7 +155,7 @@ def my_new_tool(param: str) -> str:
 ```python
 from agent.tools import my_new_tool
 
-graph_builder.add_node("ecocash_tools", ToolNode([
+graph_builder.add_node("remittance_tools", ToolNode([
     get_balance, 
     list_transactions, 
     create_ticket,
@@ -177,7 +177,7 @@ Edit the system message in `engine/chat.py` to change agent behavior:
 
 ```python
 system_message = """
-You are the Ecocash Assistant...
+You are the Remittance Assistant...
 [Modify instructions here]
 """
 ```

@@ -2,13 +2,13 @@
 
 ## Overview
 
-The MCP (Model Context Protocol) server is set up as a separate service in a sibling directory to the ecocash-assistant project.
+The MCP (Model Context Protocol) server is set up as a separate service in a sibling directory to the remittance-assistant project.
 
 ## Location
 
 - **MCP Server Directory**: `/Users/vishnu.kumar/cursorai/mcp-service`
 - **Repository**: https://github.com/Sasai-Fintech/mcp-service
-- **Status**: External repository (not committed to ecocash-assistant)
+- **Status**: External repository (not committed to remittance-assistant)
 
 ## Setup Steps
 
@@ -78,7 +78,7 @@ The backend `.env` file has been updated with:
 MCP_SERVER_URL=http://localhost:8001/mcp
 ```
 
-This allows the ecocash-assistant backend to connect to the MCP server.
+This allows the remittance-assistant backend to connect to the MCP server.
 
 ## Available MCP Tools
 

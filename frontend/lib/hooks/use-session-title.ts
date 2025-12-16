@@ -10,7 +10,7 @@ export interface SessionInfo {
   lastMessage?: string;
 }
 
-const STORAGE_KEY = "ecocash_sessions";
+const STORAGE_KEY = "remittance_sessions";
 // Use Next.js API routes which proxy to the backend
 // This allows server-side code to read environment variables at runtime
 // Client-side code uses relative URLs to the Next.js API routes

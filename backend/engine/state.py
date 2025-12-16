@@ -1,7 +1,7 @@
 from langgraph.graph import MessagesState
 
 class AgentState(MessagesState):
-    """The state of the agent for EcoCash Assistant with workflow tracking.
+    """The state of the agent for Remittance Assistant with workflow tracking.
     
     Additional state fields (added dynamically):
     - current_workflow: Optional[str] - Current workflow name

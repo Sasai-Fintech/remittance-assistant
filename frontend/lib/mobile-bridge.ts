@@ -66,8 +66,8 @@ export function isAllowedOrigin(origin: string): boolean {
   // Production: Add your Flutter app's origin here
   // Also allow dev/staging/sandbox domains for testing
   const allowedOrigins = [
-    'ecocash://', // Flutter deep link scheme
-    'https://ecocash.app', // Production web origin
+    'remittance://', // Flutter deep link scheme
+    'https://remittance.app', // Production web origin
     'https://dev.sasaipaymentgateway.com', // Dev environment
     'https://staging.sasaipaymentgateway.com', // Staging environment
     'https://sandbox.sasaipaymentgateway.com', // Sandbox environment

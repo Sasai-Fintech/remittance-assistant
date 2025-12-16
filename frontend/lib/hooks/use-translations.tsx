@@ -47,7 +47,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Load saved language preference from localStorage
-    const savedLanguage = localStorage.getItem("ecocash_language") as Language;
+    const savedLanguage = localStorage.getItem("remittance_language") as Language;
     if (savedLanguage && (savedLanguage === "en" || savedLanguage === "sn")) {
       setLanguageState(savedLanguage);
     }
@@ -55,7 +55,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    localStorage.setItem("ecocash_language", lang);
+    localStorage.setItem("remittance_language", lang);
   };
 
   const t = (key: string): string => {

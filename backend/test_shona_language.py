@@ -1,6 +1,6 @@
 """
 Test script to evaluate GPT-4o-mini's Shona (ChiShona) language capability
-for EcoCash Assistant use cases.
+for Remittance Assistant use cases.
 """
 
 import os
@@ -70,7 +70,7 @@ SHONA_TEST_PROMPTS = {
 }
 
 # System message similar to production
-SYSTEM_MESSAGE = """You are the Ecocash Assistant, a helpful and empathetic AI relationship manager for Ecocash fintech services in Zimbabwe.
+SYSTEM_MESSAGE = """You are the Remittance Assistant, a helpful and empathetic AI relationship manager for Remittance fintech services in Zimbabwe.
 You help users manage their wallet, view transactions, and resolve issues.
 
 Available capabilities:

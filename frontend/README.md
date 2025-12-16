@@ -1,6 +1,6 @@
-# EcoCash Assistant Frontend
+# Remittance Assistant Frontend
 
-Next.js frontend application for the EcoCash AI Assistant. Built with CopilotKit React components, providing a conversational interface with rich widget support for wallet management, transactions, and support tickets.
+Next.js frontend application for the Remittance AI Assistant. Built with CopilotKit React components, providing a conversational interface with rich widget support for wallet management, transactions, and support tickets.
 
 ## 🏗️ Architecture
 
@@ -190,7 +190,7 @@ TypeScript types are defined in:
 
 Import shared schemas:
 ```typescript
-import { BalanceCardSchema } from "@ecocash/schemas";
+import { BalanceCardSchema } from "@remittance/schemas";
 ```
 
 ## 🔌 API Integration
@@ -203,7 +203,7 @@ The frontend connects to the backend via:
    - Default: `http://localhost:8000/api/copilotkit`
    - Can be overridden via `REMOTE_ACTION_URL` env var
 
-2. **Agent Name**: `ecocash_agent` (defined in backend)
+2. **Agent Name**: `remittance_agent` (defined in backend)
 
 3. **Streaming**: Enabled by default for real-time responses
 

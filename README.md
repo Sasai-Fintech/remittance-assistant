@@ -1,6 +1,6 @@
-# EcoCash AI Assistant
+# Remittance AI Assistant
 
-An AI-powered conversational assistant for EcoCash fintech services, built with CopilotKit, LangGraph, and Next.js. The assistant helps users manage their wallet balances, view transactions, and create support tickets through natural language interactions.
+An AI-powered conversational assistant for Remittance fintech services, built with CopilotKit, LangGraph, and Next.js. The assistant helps users manage their wallet balances, view transactions, and create support tickets through natural language interactions.
 
 ## 🏗️ Architecture
 
@@ -96,7 +96,7 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-ecocash-assistant/
+remittance-assistant/
 ├── backend/                 # Python FastAPI backend
 │   ├── agent/              # LangGraph agent definition
 │   │   ├── graph.py       # Agent workflow graph

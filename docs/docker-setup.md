@@ -1,6 +1,6 @@
 # Docker Setup Guide
 
-This guide explains how to run the EcoCash Assistant using Docker and Docker Compose.
+This guide explains how to run the Remittance Assistant using Docker and Docker Compose.
 
 ## Prerequisites
 
@@ -50,11 +50,11 @@ Create a `.env` file in the root directory:
 ```bash
 # MongoDB (use MongoDB Atlas or local MongoDB)
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority
-MONGODB_DB_NAME=ecocash_assistant
+MONGODB_DB_NAME=remittance_assistant
 
 # Or for local MongoDB:
 # MONGODB_URI=mongodb://localhost:27017
-# MONGODB_DB_NAME=ecocash_assistant
+# MONGODB_DB_NAME=remittance_assistant
 
 # Backend
 OPENAI_API_KEY=your_openai_api_key
@@ -89,19 +89,19 @@ The checkpointer automatically creates the `checkpoints` collection on first use
 ### Backup MongoDB (if using local MongoDB):
 ```bash
 # Using mongodump
-mongodump --uri="mongodb://localhost:27017" --db=ecocash_assistant --out=./backup
+mongodump --uri="mongodb://localhost:27017" --db=remittance_assistant --out=./backup
 ```
 
 ### Restore MongoDB (if using local MongoDB):
 ```bash
 # Using mongorestore
-mongorestore --uri="mongodb://localhost:27017" --db=ecocash_assistant ./backup/ecocash_assistant
+mongorestore --uri="mongodb://localhost:27017" --db=remittance_assistant ./backup/remittance_assistant
 ```
 
 ### Access MongoDB (if using local MongoDB):
 ```bash
 # Using mongosh
-mongosh "mongodb://localhost:27017/ecocash_assistant"
+mongosh "mongodb://localhost:27017/remittance_assistant"
 ```
 
 ## Troubleshooting

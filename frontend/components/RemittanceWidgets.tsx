@@ -18,7 +18,7 @@ import { FinancialInsights, CashFlowOverview } from "@/types/schemas";
  * 
  * Reference: https://docs.copilotkit.ai/langgraph/generative-ui/backend-tools
  */
-export function EcocashWidgets() {
+export function RemittanceWidgets() {
   // Track active tool calls to prevent duplicate widgets
   // Use refs to track the latest call timestamp for each tool
   // This ensures retries with same args are treated as new calls

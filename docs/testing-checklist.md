@@ -1,6 +1,6 @@
 # Testing Checklist
 
-This checklist ensures the EcoCash Assistant works correctly after code changes.
+This checklist ensures the Remittance Assistant works correctly after code changes.
 
 ## Pre-Deployment Checks
 

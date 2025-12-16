@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 # Read ROOT_PATH from environment variable for reverse proxy support
 # This is needed when the ingress doesn't strip the path prefix
-# Set ROOT_PATH="/ecocash-backend" if path rewrite isn't working
+# Set ROOT_PATH="/remittance-backend" if path rewrite isn't working
 ROOT_PATH = os.getenv("ROOT_PATH", "")
 
 app = FastAPI(
@@ -200,7 +200,7 @@ graph = build_graph()  # Calls get_checkpointer_sync() internally
 sdk = CopilotKitRemoteEndpoint(
     agents=[
         LangGraphAgent(
-            name="ecocash_agent",
+            name="remittance_agent",
             description="Ecocash Relationship Manager",
             graph=graph,
         )

@@ -6,7 +6,7 @@ import { TranslationProvider } from "@/lib/hooks/use-translations";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "EcoCash Assistant",
+  title: "Remittance Assistant",
   description: "Your AI Financial Companion",
   icons: {
     icon: "/favicon.ico",

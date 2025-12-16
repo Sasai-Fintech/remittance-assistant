@@ -15,9 +15,9 @@ START_MCP=${START_MCP:-true}
 
 if [ "$START_MCP" = "true" ]; then
     # Start MCP Server (optional - can be disabled with START_MCP=false)
-    # Transport mode is configured via MCP_TRANSPORT in mcp-ecocash/.env file
+    # Transport mode is configured via MCP_TRANSPORT in mcp-remittance/.env file
     echo "Starting MCP Server..."
-    cd mcp-ecocash
+    cd mcp-remittance
     
     # Initialize SASAI_USER_REFERENCE_ID
     SASAI_USER_REFERENCE_ID="(not found)"

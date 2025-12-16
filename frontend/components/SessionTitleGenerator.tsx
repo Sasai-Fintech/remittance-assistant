@@ -14,13 +14,13 @@ export function SessionTitleGenerator() {
 
   // Get current thread ID
   useEffect(() => {
-    const stored = localStorage.getItem("ecocash_current_thread");
+    const stored = localStorage.getItem("remittance_current_thread");
     if (stored) {
       setCurrentThreadId(stored);
     } else {
       // Create new thread ID if none exists
       const newThreadId = `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem("ecocash_current_thread", newThreadId);
+      localStorage.setItem("remittance_current_thread", newThreadId);
       setCurrentThreadId(newThreadId);
     }
   }, []);

@@ -58,7 +58,7 @@ graph TD
 - It reads the notes from the Specialists.
 - It can check your balance or look up history using the **Tools**.
 
-### 4. The Computer System (`ecocash_tools`)
+### 4. The Computer System (`remittance_tools`)
 **Job**: These are the actual functions that fetch data.
 - `get_wallet_balance`: Checks your account balance.
 - `get_wallet_transaction_history`: Pulls your statement.
