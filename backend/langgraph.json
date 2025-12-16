@@ -3,7 +3,7 @@
     "dockerfile_lines": [],
     "dependencies": ["."],
     "graphs": {
-      "ecocash_agent": "./agent/graph.py:build_graph"
+      "remittance_agent": "./agent/graph.py:build_graph"
     },
     "env": ".env"
 }

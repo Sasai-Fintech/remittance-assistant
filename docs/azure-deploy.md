@@ -1,6 +1,6 @@
 # Azure Container Apps Deployment Guide
 
-This guide explains how to deploy the EcoCash Assistant to Azure Container Apps.
+This guide explains how to deploy the Remittance Assistant to Azure Container Apps.
 
 ## Prerequisites
 
@@ -16,15 +16,15 @@ This guide explains how to deploy the EcoCash Assistant to Azure Container Apps.
 az login
 
 # Set variables
-RESOURCE_GROUP="ecocash-rg"
-ACR_NAME="ecocashregistry"
+RESOURCE_GROUP="remittance-rg"
+ACR_NAME="remittanceregistry"
 LOCATION="eastus"
 
 # Build and push backend image
-az acr build --registry $ACR_NAME --image ecocash-backend:latest ./backend
+az acr build --registry $ACR_NAME --image remittance-backend:latest ./backend
 
 # Build and push frontend image
-az acr build --registry $ACR_NAME --image ecocash-frontend:latest ./frontend
+az acr build --registry $ACR_NAME --image remittance-frontend:latest ./frontend
 ```
 
 ## Step 2: Configure MongoDB
@@ -47,12 +47,12 @@ az acr build --registry $ACR_NAME --image ecocash-frontend:latest ./frontend
 ```bash
 az container create \
   --resource-group $RESOURCE_GROUP \
-  --name ecocash-mongodb \
+  --name remittance-mongodb \
   --image mongo:latest \
-  --dns-name-label ecocash-mongodb \
+  --dns-name-label remittance-mongodb \
   --ports 27017 \
   --environment-variables \
-    MONGO_INITDB_DATABASE=ecocash_assistant
+    MONGO_INITDB_DATABASE=remittance_assistant
 ```
 
 **Note**: For production, use MongoDB Atlas. The project already has MongoDB Atlas configured.
@@ -62,7 +62,7 @@ az container create \
 ```bash
 # Create Container Apps environment
 az containerapp env create \
-  --name ecocash-env \
+  --name remittance-env \
   --resource-group $RESOURCE_GROUP \
   --location $LOCATION
 ```
@@ -75,15 +75,15 @@ ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --query loginServer -o tsv)
 
 # Create backend container app
 az containerapp create \
-  --name ecocash-backend \
+  --name remittance-backend \
   --resource-group $RESOURCE_GROUP \
-  --environment ecocash-env \
-  --image $ACR_LOGIN_SERVER/ecocash-backend:latest \
+  --environment remittance-env \
+  --image $ACR_LOGIN_SERVER/remittance-backend:latest \
   --target-port 8000 \
   --ingress external \
   --env-vars \
     MONGODB_URI="@Microsoft.KeyVault(SecretUri=<your-mongodb-uri-secret-uri>)" \
-    MONGODB_DB_NAME="ecocash_assistant" \
+    MONGODB_DB_NAME="remittance_assistant" \
     OPENAI_API_KEY="@Microsoft.KeyVault(SecretUri=<your-key-vault-secret-uri>)" \
   --registry-server $ACR_LOGIN_SERVER \
   --cpu 1.0 \
@@ -96,14 +96,14 @@ az containerapp create \
 
 ```bash
 # Get backend URL
-BACKEND_URL=$(az containerapp show --name ecocash-backend --resource-group $RESOURCE_GROUP --query properties.configuration.ingress.fqdn -o tsv)
+BACKEND_URL=$(az containerapp show --name remittance-backend --resource-group $RESOURCE_GROUP --query properties.configuration.ingress.fqdn -o tsv)
 
 # Create frontend container app
 az containerapp create \
-  --name ecocash-frontend \
+  --name remittance-frontend \
   --resource-group $RESOURCE_GROUP \
-  --environment ecocash-env \
-  --image $ACR_LOGIN_SERVER/ecocash-frontend:latest \
+  --environment remittance-env \
+  --image $ACR_LOGIN_SERVER/remittance-frontend:latest \
   --target-port 3000 \
   --ingress external \
   --env-vars \
@@ -122,13 +122,13 @@ Health probes are automatically configured via Dockerfile HEALTHCHECK, but you c
 ```bash
 # Backend health probe
 az containerapp update \
-  --name ecocash-backend \
+  --name remittance-backend \
   --resource-group $RESOURCE_GROUP \
   --set-env-vars HEALTH_CHECK_PATH=/
 
 # Frontend health probe
 az containerapp update \
-  --name ecocash-frontend \
+  --name remittance-frontend \
   --resource-group $RESOURCE_GROUP \
   --set-env-vars HEALTH_CHECK_PATH=/api/health
 ```
@@ -146,7 +146,7 @@ Ensure backend and frontend can communicate:
 
 ### Backend
 - `MONGODB_URI`: MongoDB connection string (store in Key Vault)
-- `MONGODB_DB_NAME`: Database name for sessions (default: `ecocash_assistant`)
+- `MONGODB_DB_NAME`: Database name for sessions (default: `remittance_assistant`)
 - `OPENAI_API_KEY`: OpenAI API key (store in Key Vault)
 - `REMOTE_ACTION_URL`: Backend URL (optional, for internal routing)
 
@@ -172,8 +172,8 @@ Ensure backend and frontend can communicate:
 
 View logs:
 ```bash
-az containerapp logs show --name ecocash-backend --resource-group $RESOURCE_GROUP --follow
-az containerapp logs show --name ecocash-frontend --resource-group $RESOURCE_GROUP --follow
+az containerapp logs show --name remittance-backend --resource-group $RESOURCE_GROUP --follow
+az containerapp logs show --name remittance-frontend --resource-group $RESOURCE_GROUP --follow
 ```
 
 ## Troubleshooting

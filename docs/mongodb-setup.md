@@ -10,14 +10,14 @@ The Ecocash Assistant uses MongoDB to persist chat sessions, ensuring all conver
 
 ### Option 1: Use Existing MongoDB Atlas (Recommended)
 
-If you already have MongoDB Atlas configured (as used in mcp-ecocash), you can reuse the same connection:
+If you already have MongoDB Atlas configured (as used in mcp-remittance), you can reuse the same connection:
 
 1. **Get MongoDB URI** from your existing configuration or MongoDB Atlas dashboard
 2. **Set environment variables** in `backend/.env`:
 
 ```bash
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority
-MONGODB_DB_NAME=ecocash_assistant
+MONGODB_DB_NAME=remittance_assistant
 OPENAI_API_KEY=your_openai_api_key
 ```
 
@@ -51,11 +51,11 @@ Create or update `backend/.env`:
 ```bash
 # Local MongoDB
 MONGODB_URI=mongodb://localhost:27017
-MONGODB_DB_NAME=ecocash_assistant
+MONGODB_DB_NAME=remittance_assistant
 
 # Or MongoDB Atlas
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority
-MONGODB_DB_NAME=ecocash_assistant
+MONGODB_DB_NAME=remittance_assistant
 
 OPENAI_API_KEY=your_openai_api_key
 ```
@@ -70,13 +70,13 @@ OPENAI_API_KEY=your_openai_api_key
 mongosh
 
 # Or connect to MongoDB Atlas
-mongosh "mongodb+srv://username:password@cluster.mongodb.net/ecocash_assistant"
+mongosh "mongodb+srv://username:password@cluster.mongodb.net/remittance_assistant"
 ```
 
 **Test connection:**
 ```javascript
 // In mongosh
-use ecocash_assistant
+use remittance_assistant
 db.runCommand({ ping: 1 })
 ```
 
@@ -85,7 +85,7 @@ db.runCommand({ ping: 1 })
 1. Start the backend server
 2. Check backend logs for:
    ```
-   ✅ Using MongoDBSaver for session persistence (database: ecocash_assistant)
+   ✅ Using MongoDBSaver for session persistence (database: remittance_assistant)
    ```
 3. If MongoDB is unavailable, you'll see:
    ```
@@ -100,7 +100,7 @@ db.runCommand({ ping: 1 })
 
 ```javascript
 // In mongosh
-use ecocash_assistant
+use remittance_assistant
 db.checkpoints.countDocuments({})
 db.checkpoints.find().limit(1).pretty()
 ```
@@ -155,7 +155,7 @@ mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority
 
 ### MongoDB Atlas (with database name in URI)
 ```
-mongodb+srv://username:password@cluster.mongodb.net/ecocash_assistant?retryWrites=true&w=majority
+mongodb+srv://username:password@cluster.mongodb.net/remittance_assistant?retryWrites=true&w=majority
 ```
 
 ## Troubleshooting
@@ -201,7 +201,7 @@ mongodb+srv://username:password@cluster.mongodb.net/ecocash_assistant?retryWrite
 3. Test MongoDB connection directly
 4. Check if `checkpoints` collection exists:
    ```javascript
-   use ecocash_assistant
+   use remittance_assistant
    show collections
    ```
 
@@ -210,7 +210,7 @@ mongodb+srv://username:password@cluster.mongodb.net/ecocash_assistant?retryWrite
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `MONGODB_URI` | MongoDB connection string | - | Yes (for persistence) |
-| `MONGODB_DB_NAME` | Database name for sessions | `ecocash_assistant` | No |
+| `MONGODB_DB_NAME` | Database name for sessions | `remittance_assistant` | No |
 
 ## Production Considerations
 

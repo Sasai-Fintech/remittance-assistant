@@ -69,7 +69,7 @@ def register_monitoring_tools(mcp_server) -> None:
                     test_json_data = None
                     
                     if endpoint_name == "wallet_balance":
-                        test_params = {"currency": "USD", "providerCode": "ecocash"}
+                        test_params = {"currency": "USD", "providerCode": "remittance"}
                         response = await client.get(endpoint_url, params=test_params, headers=headers)
                     elif endpoint_name == "transaction_history":
                         # Transaction history requires POST with JSON payload including PIN

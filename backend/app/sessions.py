@@ -33,7 +33,7 @@ async def debug_sessions():
     """Debug endpoint to check database state."""
     try:
         mongodb_uri = os.getenv("MONGODB_URI")
-        mongodb_db_name = os.getenv("MONGODB_DB_NAME", "ecocash_assistant")
+        mongodb_db_name = os.getenv("MONGODB_DB_NAME", "remittance_assistant")
         
         if not mongodb_uri:
             return {"error": "MONGODB_URI not set"}
@@ -108,7 +108,7 @@ async def list_sessions(user_id: Optional[str] = None, limit: int = 50):
         # For MongoDB checkpointer, query the database directly
         if is_mongodb:
             mongodb_uri = os.getenv("MONGODB_URI")
-            mongodb_db_name = os.getenv("MONGODB_DB_NAME", "ecocash_assistant")
+            mongodb_db_name = os.getenv("MONGODB_DB_NAME", "remittance_assistant")
             
             if not mongodb_uri:
                 logger.warning("MONGODB_URI not set, cannot query sessions")
@@ -372,7 +372,7 @@ async def delete_session(thread_id: str):
         if is_mongodb:
             # Delete from MongoDB database directly
             mongodb_uri = os.getenv("MONGODB_URI")
-            mongodb_db_name = os.getenv("MONGODB_DB_NAME", "ecocash_assistant")
+            mongodb_db_name = os.getenv("MONGODB_DB_NAME", "remittance_assistant")
             
             if not mongodb_uri:
                 raise HTTPException(status_code=500, detail="MONGODB_URI not configured")

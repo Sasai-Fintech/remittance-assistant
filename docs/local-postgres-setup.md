@@ -36,10 +36,10 @@ brew install pgvector
 psql -U postgres -d postgres
 
 # Create database
-CREATE DATABASE ecocash_assistant;
+CREATE DATABASE remittance_assistant;
 
 # Connect to the new database
-\c ecocash_assistant
+\c remittance_assistant
 
 # Install pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -56,13 +56,13 @@ CREATE EXTENSION IF NOT EXISTS vector;
 Create or update `backend/.env`:
 
 ```bash
-POSTGRES_URI=postgresql://postgres@localhost:5432/ecocash_assistant
+POSTGRES_URI=postgresql://postgres@localhost:5432/remittance_assistant
 OPENAI_API_KEY=your_openai_api_key
 ```
 
 **Note**: If PostgreSQL requires a password, use:
 ```bash
-POSTGRES_URI=postgresql://postgres:your_password@localhost:5432/ecocash_assistant
+POSTGRES_URI=postgresql://postgres:your_password@localhost:5432/remittance_assistant
 ```
 
 ## Verify Setup
@@ -71,10 +71,10 @@ POSTGRES_URI=postgresql://postgres:your_password@localhost:5432/ecocash_assistan
 
 ```bash
 # Test connection
-psql -U postgres -d ecocash_assistant -c "SELECT version();"
+psql -U postgres -d remittance_assistant -c "SELECT version();"
 
 # Check pgvector extension
-psql -U postgres -d ecocash_assistant -c "\dx"
+psql -U postgres -d remittance_assistant -c "\dx"
 ```
 
 You should see `vector` in the extension list.
@@ -140,7 +140,7 @@ psql -U $(whoami) -d postgres
 5. Check database:
 
 ```bash
-psql -U postgres -d ecocash_assistant -c "SELECT COUNT(*) FROM checkpoints;"
+psql -U postgres -d remittance_assistant -c "SELECT COUNT(*) FROM checkpoints;"
 ```
 
 ## Switching to Docker Later
@@ -150,7 +150,7 @@ When ready to test with Docker:
 1. Stop local PostgreSQL: `brew services stop postgresql@15`
 2. Update `POSTGRES_URI` in `backend/.env` to:
    ```
-   POSTGRES_URI=postgresql://postgres:password@localhost:5432/ecocash_assistant
+   POSTGRES_URI=postgresql://postgres:password@localhost:5432/remittance_assistant
    ```
 3. Start Docker Compose: `docker-compose up -d postgres`
 4. Restart backend to pick up new connection
@@ -159,16 +159,16 @@ When ready to test with Docker:
 
 ### Local PostgreSQL (no password)
 ```
-postgresql://postgres@localhost:5432/ecocash_assistant
+postgresql://postgres@localhost:5432/remittance_assistant
 ```
 
 ### Local PostgreSQL (with password)
 ```
-postgresql://postgres:your_password@localhost:5432/ecocash_assistant
+postgresql://postgres:your_password@localhost:5432/remittance_assistant
 ```
 
 ### Docker PostgreSQL
 ```
-postgresql://postgres:password@localhost:5432/ecocash_assistant
+postgresql://postgres:password@localhost:5432/remittance_assistant
 ```
 

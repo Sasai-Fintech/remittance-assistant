@@ -87,9 +87,9 @@ export const POST = async (req: NextRequest) => {
           langsmithApiKey,
           agents: [
             {
-              name: "ecocash_agent",
+              name: "remittance_agent",
               description:
-                "Ecocash Relationship Manager",
+                "Remittance Relationship Manager",
             },
           ],
           // Headers are forwarded via CopilotKit properties automatically
@@ -99,7 +99,7 @@ export const POST = async (req: NextRequest) => {
             process.env.REMOTE_ACTION_URL || 
             (process.env.BACKEND_URL 
               ? `${process.env.BACKEND_URL}/api/copilotkit`
-              : "http://ecocash-assistant-backend.spg2-ecocash-assistant.svc.cluster.local:80/api/copilotkit"),
+              : "http://remittance-assistant-backend.spg2-remittance-assistant.svc.cluster.local:80/api/copilotkit"),
           // Headers are forwarded via CopilotKit properties automatically
         });
 

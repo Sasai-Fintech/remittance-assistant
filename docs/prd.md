@@ -1,12 +1,12 @@
 # Ecocash AI Relationship Manager – PRD
 
-**Objective:** Deliver a conversational EcoCash relationship manager that combines chat and AG-UI widgets to handle wallet balances, transaction insights, and ticket workflows for retail customers within the mobile app.
+**Objective:** Deliver a conversational Remittance relationship manager that combines chat and AG-UI widgets to handle wallet balances, transaction insights, and ticket workflows for retail customers within the mobile app.
 
 **Technical Context:** CopilotKit web widget (AG-UI protocol) embedded in Ecocash mobile, backed by Agno AgentOS (v2.2.13) with MongoDB Atlas for sessions/memory, FastMCP v2 dummy wallet server (swappable for production MCP), and OpenAI GPT‑5 Mini streamed through AG-UI [[CopilotKit](https://www.copilotkit.ai)] [[AG-UI](https://docs.agno.com/agent-os/interfaces/ag-ui/introduction)].
 
 **MVP Requirements:**
 
-1. **Session Handling:** The mobile shell injects a signed JWT directly into the widget; the frontend forwards it to the backend (no server-side validation yet) and persists session metadata + history in MongoDB `ecocash-assistance-agent`.
+1. **Session Handling:** The mobile shell injects a signed JWT directly into the widget; the frontend forwards it to the backend (no server-side validation yet) and persists session metadata + history in MongoDB `remittance-assistance-agent`.
 2. **Structured Responses:** Agent responses must serialize AG-UI widgets (balance card, transaction table with CTA, ticket form, ticket status board, confirmation dialog) via the shared schema package so the frontend can render rich tiles alongside chat bubbles.
 3. **FastMCP Integration:** Dummy FastMCP server exposes `eco_get_balances`, `eco_get_transactions`, `eco_create_ticket`, `eco_get_ticket_status`; Agno AgentOS consumes them through `MCPTools` (stdio) while passing along the mobile JWT for downstream authorization.
 4. **Human-in-loop Controls:** Sensitive MCP mutations (ticket creation, account changes) require a confirmation widget summarizing the action; the agent must wait for the user’s postback before proceeding.

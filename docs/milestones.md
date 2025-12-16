@@ -7,7 +7,7 @@
 
 1. PNPM/Turbo workspace + linting/formatting + Husky hooks.
 2. Backend/Frontend config loaders, consolidated envs under `configs/.env`.
-3. `@ecocash/schemas` workspace published + consumed via TS path alias.
+3. `@remittance/schemas` workspace published + consumed via TS path alias.
 4. Architecture + PRD + user journey docs committed; mobile wrapper for testing.
 
 ## Milestone 2 – CopilotKit Widget & UX 🚧 (MVP working, polishing ongoing)

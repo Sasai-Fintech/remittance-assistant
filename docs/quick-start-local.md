@@ -13,11 +13,11 @@ Create or update `backend/.env` file:
 ```bash
 # Option 1: Use MongoDB Atlas (recommended - already configured)
 MONGODB_URI=mongodb+srv://sasairagengine:j3ugUjql4I60TY52@sandbox.detzo.mongodb.net/?retryWrites=true&w=majority&appName=sandbox
-MONGODB_DB_NAME=ecocash_assistant
+MONGODB_DB_NAME=remittance_assistant
 
 # Option 2: Use Local MongoDB
 # MONGODB_URI=mongodb://localhost:27017
-# MONGODB_DB_NAME=ecocash_assistant
+# MONGODB_DB_NAME=remittance_assistant
 
 # Your OpenAI API key
 OPENAI_API_KEY=your_openai_api_key_here
@@ -60,7 +60,7 @@ The backend will automatically:
 
 Check backend logs for:
 ```
-✅ Using MongoDBSaver for session persistence (database: ecocash_assistant)
+✅ Using MongoDBSaver for session persistence (database: remittance_assistant)
 ```
 Or if MongoDB is unavailable:
 ```
@@ -71,7 +71,7 @@ Check database has checkpoints:
 ```bash
 # Using MongoDB Shell
 mongosh "your_mongodb_uri"
-use ecocash_assistant
+use remittance_assistant
 db.checkpoints.countDocuments({})
 
 # Or use the debug API endpoint

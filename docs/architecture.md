@@ -14,7 +14,7 @@
 2. Frontend parses token (no backend validation for MVP), stores session metadata locally, and starts CopilotKit with headers `{ Authorization: Bearer <JWT> }`.
 3. CopilotKit runtime (`/api/copilotkit`) proxies requests to the backend AG-UI endpoint (`/agui`) while preserving headers.
 4. Agno Agent processes the prompt, logs reasoning, invokes FastMCP tools (wallet/ticket) with the JWT, and writes session/memory to MongoDB.
-5. When the agent emits `render_widget` / `request_confirmation`, the frontend validates payloads via `@ecocash/schemas` and renders AG-UI cards inline; user taps post back structured payloads which re-enter the conversation loop.
+5. When the agent emits `render_widget` / `request_confirmation`, the frontend validates payloads via `@remittance/schemas` and renders AG-UI cards inline; user taps post back structured payloads which re-enter the conversation loop.
 6. Analytics + deeplink interactions are captured on the frontend; backend logs tool usage for future telemetry.
 
 ## Data Stores

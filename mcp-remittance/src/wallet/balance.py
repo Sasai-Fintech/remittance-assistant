@@ -20,7 +20,7 @@ def register_balance_tools(mcp_server) -> None:
     @mcp_server.tool
     async def get_wallet_balance(
         currency: Literal["USD", "EUR", "GBP", "ZWL"] = "USD",
-        provider_code: Literal["ecocash", "onemoney", "telecash"] = "ecocash",
+        provider_code: Literal["remittance", "onemoney", "telecash"] = "remittance",
         auto_generate_token: bool = True,
         external_token: Optional[str] = None
     ) -> Dict[str, Any]:
@@ -32,7 +32,7 @@ def register_balance_tools(mcp_server) -> None:
         
         Args:
             currency: The currency code for the balance inquiry (USD, EUR, GBP, ZWL)
-            provider_code: The payment provider code (ecocash, onemoney, telecash)
+            provider_code: The payment provider code (remittance, onemoney, telecash)
             auto_generate_token: Whether to automatically generate a new token if none exists (only if token manager is enabled)
             external_token: Optional external authentication token (used when token manager is disabled)
         

@@ -33,7 +33,7 @@ export function SessionHistory() {
   const [isSwitching, setIsSwitching] = useState(() => {
     // Check if we're in the middle of switching (persists across reload)
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('ecocash_switching_session') === 'true';
+      return sessionStorage.getItem('remittance_switching_session') === 'true';
     }
     return false;
   });
@@ -61,8 +61,8 @@ export function SessionHistory() {
 
   // Load current thread ID from localStorage (CopilotKit uses this)
   useEffect(() => {
-    const stored = localStorage.getItem("ecocash_current_thread");
-    const continueSession = sessionStorage.getItem("ecocash_continue_session");
+    const stored = localStorage.getItem("remittance_current_thread");
+    const continueSession = sessionStorage.getItem("remittance_continue_session");
     
     if (stored && continueSession === "true") {
       // User explicitly clicked a chat session - continue it
@@ -71,16 +71,16 @@ export function SessionHistory() {
     } else {
       // Fresh page load - start new session
       console.log("[SessionHistory] 🆕 Fresh load - starting new session");
-      localStorage.removeItem("ecocash_current_thread");
+      localStorage.removeItem("remittance_current_thread");
       
       // Generate a new thread ID for the new session
       const newThreadId = `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem("ecocash_current_thread", newThreadId);
+      localStorage.setItem("remittance_current_thread", newThreadId);
       setCurrentThreadId(newThreadId);
     }
     
     // Clear the continue session flag after checking
-    sessionStorage.removeItem("ecocash_continue_session");
+    sessionStorage.removeItem("remittance_continue_session");
   }, []);
 
   // Clear switching state once the chat has loaded
@@ -93,7 +93,7 @@ export function SessionHistory() {
       // Simple approach: Just wait a shorter time after page loads
       const timer = setTimeout(() => {
         console.log("[SessionHistory] ✅ Hiding loader after delay");
-        sessionStorage.removeItem('ecocash_switching_session');
+        sessionStorage.removeItem('remittance_switching_session');
         setIsSwitching(false);
       }, 800); // Reduced to 800ms - just enough for initial render
       
@@ -107,7 +107,7 @@ export function SessionHistory() {
   const handleNewSession = () => {
     // Generate new thread ID - CopilotKit will use this for the new session
     const newThreadId = `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem("ecocash_current_thread", newThreadId);
+    localStorage.setItem("remittance_current_thread", newThreadId);
     setCurrentThreadId(newThreadId);
     setOpen(false);
     // Reload page to start fresh session (CopilotKit will pick up new thread)
@@ -120,11 +120,11 @@ export function SessionHistory() {
     
     // Show loader immediately and persist across reload
     setIsSwitching(true);
-    sessionStorage.setItem('ecocash_switching_session', 'true');
-    sessionStorage.setItem('ecocash_continue_session', 'true'); // Signal to continue this session
+    sessionStorage.setItem('remittance_switching_session', 'true');
+    sessionStorage.setItem('remittance_continue_session', 'true'); // Signal to continue this session
     
     // Set as current thread - CopilotKit will load this session from checkpointer
-    localStorage.setItem("ecocash_current_thread", sessionThreadId);
+    localStorage.setItem("remittance_current_thread", sessionThreadId);
     setCurrentThreadId(sessionThreadId);
     setOpen(false);
     

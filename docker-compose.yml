@@ -5,10 +5,10 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: ecocash-backend
+    container_name: remittance-backend
     environment:
       MONGODB_URI: ${MONGODB_URI:-mongodb://localhost:27017}
-      MONGODB_DB_NAME: ${MONGODB_DB_NAME:-ecocash_assistant}
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME:-remittance_assistant}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       REMOTE_ACTION_URL: http://backend:8000/api/copilotkit
     ports:
@@ -20,13 +20,13 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - ecocash-network
+      - remittance-network
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: ecocash-frontend
+    container_name: remittance-frontend
     environment:
       NEXT_PUBLIC_REMOTE_ACTION_URL: http://localhost:8000/api/copilotkit
       OPENAI_API_KEY: ${OPENAI_API_KEY}
@@ -42,9 +42,9 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - ecocash-network
+      - remittance-network
 
 networks:
-  ecocash-network:
+  remittance-network:
     driver: bridge
 

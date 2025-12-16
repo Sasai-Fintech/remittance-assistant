@@ -12,7 +12,7 @@ import { useTranslations } from "@/lib/hooks/use-translations";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 // Lazy load heavy components to reduce initial bundle size
-const EcocashWidgets = lazy(() => import("@/components/EcocashWidgets").then(m => ({ default: m.EcocashWidgets })));
+const RemittanceWidgets = lazy(() => import("@/components/RemittanceWidgets").then(m => ({ default: m.RemittanceWidgets })));
 const Chat = lazy(() => import("@/components/Chat").then(m => ({ default: m.Chat })));
 const SessionHistory = lazy(() => import("@/components/SessionHistory").then(m => ({ default: m.SessionHistory })));
 const SessionTitleGenerator = lazy(() => import("@/components/SessionTitleGenerator").then(m => ({ default: m.SessionTitleGenerator })));
@@ -21,7 +21,7 @@ function NewSessionButton() {
   const handleNewSession = () => {
     // Generate new thread ID - CopilotKit will use this for the new session
     const newThreadId = `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem("ecocash_current_thread", newThreadId);
+    localStorage.setItem("remittance_current_thread", newThreadId);
     // Reload page to start fresh session (CopilotKit will pick up new thread)
     window.location.reload();
   };
@@ -192,7 +192,7 @@ function ChatWithContext({ threadId }: { threadId: string | null }) {
   return (
     <CopilotChat
       className="h-full border-0 rounded-2xl shadow-xl bg-white/95 dark:bg-zinc-800/95 backdrop-blur-sm"
-      instructions="You are the Ecocash Assistant, a helpful and friendly AI financial companion. Help users with their wallet balance, transaction history, and support tickets. Be proactive and suggest helpful actions when appropriate. When starting a new conversation, greet the user with 'How can I help you today?'"
+      instructions="You are the Remittance Assistant, a helpful and friendly AI financial companion. Help users with their wallet balance, transaction history, and support tickets. Be proactive and suggest helpful actions when appropriate. When starting a new conversation, greet the user with 'How can I help you today?'"
       labels={{
         title: "What's on your mind today?",
         initial: "How can I help you today?",
@@ -213,13 +213,13 @@ export default function Home() {
   // Read synchronously on initial render to ensure CopilotKit gets it immediately
   const [threadId, setThreadId] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem("ecocash_current_thread");
+      const stored = localStorage.getItem("remittance_current_thread");
       if (stored) {
         return stored;
       } else {
         // Generate a new thread ID if none exists
         const newThreadId = `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem("ecocash_current_thread", newThreadId);
+        localStorage.setItem("remittance_current_thread", newThreadId);
         return newThreadId;
       }
     }
@@ -229,7 +229,7 @@ export default function Home() {
   // Update threadId if localStorage changes (e.g., after session switch)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem("ecocash_current_thread");
+      const stored = localStorage.getItem("remittance_current_thread");
       if (stored && stored !== threadId) {
         setThreadId(stored);
         console.log('[COPILOTKIT] ThreadId updated from localStorage:', stored);
@@ -294,9 +294,9 @@ export default function Home() {
     // Method 2: Detect from current URL (runtime detection)
     if (typeof window !== 'undefined') {
       const pathname = window.location.pathname;
-      // If pathname starts with /ecocash-assistant, extract it
-      if (pathname.startsWith('/ecocash-assistant')) {
-        return '/ecocash-assistant';
+      // If pathname starts with /remittance-assistant, extract it
+      if (pathname.startsWith('/remittance-assistant')) {
+        return '/remittance-assistant';
       }
     }
     // Method 3: Default to empty (for local dev)
@@ -314,14 +314,14 @@ export default function Home() {
 
   return (
     <CopilotKit
-      agent="ecocash_agent"
+      agent="remittance_agent"
       runtimeUrl={runtimeUrl}
       properties={copilotKitProperties}
       threadId={threadId || undefined}
       key={threadId || 'new-session'} // Force re-render when threadId changes to load session
     >
       <Suspense fallback={<div className="hidden" />}>
-        <EcocashWidgets />
+        <RemittanceWidgets />
         <Chat />
         <SessionTitleGenerator />
       </Suspense>

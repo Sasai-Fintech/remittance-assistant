@@ -295,7 +295,7 @@ Mhoro! I’m here to help. Could you please provide more details about the balan
 
 **Response (With System)**:
 ```
-Mhoro! Ndokumbirawo undipeiwo nguva kuti ndiongorore chiyero chako. Ndokumbirawo undipe nhamba yako yeEcocash wallet kuti ndikubatsire.
+Mhoro! Ndokumbirawo undipeiwo nguva kuti ndiongorore chiyero chako. Ndokumbirawo undipe nhamba yako yeRemittance wallet kuti ndikubatsire.
 ```
 
 **Language (Basic)**: English

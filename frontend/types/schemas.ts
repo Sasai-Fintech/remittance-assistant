@@ -1,6 +1,6 @@
 /**
- * Financial schema types for EcoCash widgets
- * Inlined from @ecocash/schemas to avoid monorepo workspace dependency
+ * Financial schema types for Remittance widgets
+ * Inlined from @remittance/schemas to avoid monorepo workspace dependency
  */
 
 export interface FinancialCategory {

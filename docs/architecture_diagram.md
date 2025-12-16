@@ -50,7 +50,7 @@ graph TD
         MCP_Client[MCP Client Utility]:::backend
     end
 
-    subgraph MCP_Service [MCP Server - mcp-ecocash]
+    subgraph MCP_Service [MCP Server - mcp-remittance]
         MCP_Server[FastMCP Server]:::mcp
         
         subgraph Tools [Tool Capabilities]

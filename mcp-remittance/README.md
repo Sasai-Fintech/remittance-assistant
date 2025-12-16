@@ -204,7 +204,7 @@ await generate_token()
 # 2. Check wallet balance
 balance = await get_wallet_balance(
     currency="USD", 
-    provider_code="ecocash"
+    provider_code="remittance"
 )
 
 # 3. Get recent transactions

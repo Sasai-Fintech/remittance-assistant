@@ -217,7 +217,7 @@ graph_builder.add_node("detect_intent", detect_intent_node)
 
 
 # Define a function to get tools from MCP server
-async def get_ecocash_tools():
+async def get_remittance_tools():
     # Connect to MCP server via SSE
     # Note: In a real production app, you might want to manage the connection lifecycle better
     # For this implementation, we'll assume the server is running at the default URL
@@ -403,7 +403,7 @@ async def execute_mcp_tools(state: AgentState, config: RunnableConfig):
     return {"messages": results}
 
 # Replace the static ToolNode with our dynamic MCP executor
-graph_builder.add_node("ecocash_tools", execute_mcp_tools)
+graph_builder.add_node("remittance_tools", execute_mcp_tools)
 graph_builder.add_node("ticket_confirmation", ticket_confirmation_node)
 graph_builder.add_node("perform_ticket", perform_ticket_node)
 
@@ -427,7 +427,7 @@ def route_after_chat(state: AgentState):
             if tool_name == "create_ticket":
                 return "ticket_confirmation"
             # Route to tools for other tools
-            return "ecocash_tools"
+            return "remittance_tools"
     
     # Don't route back to subgraphs from chat_node
     # Subgraphs are only for initial summarization
@@ -487,12 +487,12 @@ graph_builder.add_conditional_edges(
     "chat_node",
     route_after_chat,
     {
-        "ecocash_tools": "ecocash_tools",
+        "remittance_tools": "remittance_tools",
         "ticket_confirmation": "ticket_confirmation",
         END: END
     }
 )
-graph_builder.add_edge("ecocash_tools", "chat_node")
+graph_builder.add_edge("remittance_tools", "chat_node")
 graph_builder.add_conditional_edges(
     "ticket_confirmation",
     route_after_confirmation,
@@ -523,7 +523,7 @@ async def get_checkpointer():
         return _checkpointer
     
     mongodb_uri = os.getenv("MONGODB_URI")
-    mongodb_db_name = os.getenv("MONGODB_DB_NAME", "ecocash_assistant")
+    mongodb_db_name = os.getenv("MONGODB_DB_NAME", "remittance_assistant")
     
     if mongodb_uri:
         try:
@@ -574,7 +574,7 @@ def get_checkpointer_sync():
     
     # Production mode: Use MongoDB checkpointer
     mongodb_uri = os.getenv("MONGODB_URI")
-    mongodb_db_name = os.getenv("MONGODB_DB_NAME", "ecocash-assistance-agent")
+    mongodb_db_name = os.getenv("MONGODB_DB_NAME", "remittance-assistance-agent")
     
     if not mongodb_uri:
         logger.warning("⚠️  MONGODB_URI not set, falling back to MemorySaver")

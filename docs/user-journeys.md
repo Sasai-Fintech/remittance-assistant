@@ -4,7 +4,7 @@
 **Technical Context:** CopilotKit widget auto-loads after session bootstrap; Agno AgentOS fetches balance data via FastMCP `get_balances`.
 **Requirements:**
 
-1. Widget renders multi-account balance card with available funds, limits, and deeplink buttons (`ecocash://wallet/...`).
+1. Widget renders multi-account balance card with available funds, limits, and deeplink buttons (`remittance://wallet/...`).
 2. Agent references last widget state when user follows up (“show USD limits”).
 3. Analytics records widget impressions and deeplink clicks for product insights.
    **Instructions for LLM:**

@@ -1,5 +1,5 @@
 """
-JWT Authentication utilities for EcoCash Assistant backend.
+JWT Authentication utilities for Remittance Assistant backend.
 
 This module provides utilities for extracting and handling JWT tokens
 from incoming requests. For MVP, we simply extract and forward tokens

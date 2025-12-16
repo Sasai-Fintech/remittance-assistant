@@ -10,7 +10,7 @@ sleep 2
 # ------------------------------------------------------------
 # 2️⃣  Back‑up current Ecocash‑Assistant code
 # ------------------------------------------------------------
-PROJECT_ROOT="/Users/vishnu.kumar/cursorai/ecocash-assistant"
+PROJECT_ROOT="/Users/vishnu.kumar/cursorai/remittance-assistant"
 echo "📦 Back‑up existing backend & frontend..."
 mv "${PROJECT_ROOT}/backend/agent"          "${PROJECT_ROOT}/backend/agent_backup"
 mv "${PROJECT_ROOT}/frontend/app"           "${PROJECT_ROOT}/frontend/app_backup"
@@ -23,30 +23,30 @@ cp -R "${TRAVEL_SRC}/agent/." "${PROJECT_ROOT}/backend/"
 echo "📂 Copying travel‑example frontend files..."
 cp -R "${TRAVEL_SRC}/ui/." "${PROJECT_ROOT}/frontend/"
 # ------------------------------------------------------------
-# 4️⃣  Rename the agent to `ecocash_agent`
+# 4️⃣  Rename the agent to `remittance_agent`
 # ------------------------------------------------------------
 # Backend graph (agent name is defined here)
 GRAPH_FILE="${PROJECT_ROOT}/backend/agent/graph.py"
 if [[ -f "${GRAPH_FILE}" ]]; then
   echo "🔧 Updating agent name in ${GRAPH_FILE} ..."
-  sed -i '' 's/name="travel"/name="ecocash_agent"/' "${GRAPH_FILE}"
+  sed -i '' 's/name="travel"/name="remittance_agent"/' "${GRAPH_FILE}"
 fi
 # FastAPI entry point (LangGraphAgent definition)
 MAIN_PY="${PROJECT_ROOT}/backend/app/main.py"
 if [[ -f "${MAIN_PY}" ]]; then
   echo "🔧 Updating agent name in ${MAIN_PY} ..."
-  sed -i '' 's/name="travel"/name="ecocash_agent"/' "${MAIN_PY}"
+  sed -i '' 's/name="travel"/name="remittance_agent"/' "${MAIN_PY}"
 fi
 # Front‑end page (CopilotKit wrapper)
 PAGE_TSX="${PROJECT_ROOT}/frontend/app/page.tsx"
 if [[ -f "${PAGE_TSX}" ]]; then
   echo "🔧 Updating CopilotKit prop in ${PAGE_TSX} ..."
-  # Ensure the `agent=` prop exists and is set to ecocash_agent
+  # Ensure the `agent=` prop exists and is set to remittance_agent
   if grep -q 'agent=' "${PAGE_TSX}"; then
-    sed -i '' 's/agent="[^"]*"/agent="ecocash_agent"/' "${PAGE_TSX}"
+    sed -i '' 's/agent="[^"]*"/agent="remittance_agent"/' "${PAGE_TSX}"
   else
     # If the prop is missing, insert it after `<CopilotKit`
-    sed -i '' '/<CopilotKit/a\  agent="ecocash_agent"' "${PAGE_TSX}"
+    sed -i '' '/<CopilotKit/a\  agent="remittance_agent"' "${PAGE_TSX}"
   fi
 fi
 # ------------------------------------------------------------

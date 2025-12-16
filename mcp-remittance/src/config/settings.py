@@ -137,7 +137,7 @@ class SasaiConfig:
     RAG_SERVICE_URL = os.getenv("RAG_SERVICE_URL", "http://localhost:8000/api/retriever")
     RAG_TENANT_ID = os.getenv("RAG_TENANT_ID", "sasai")
     RAG_TENANT_SUB_ID = os.getenv("RAG_TENANT_SUB_ID", "sasai-sub")
-    RAG_KNOWLEDGE_BASE_ID = os.getenv("RAG_KNOWLEDGE_BASE_ID", "ecocash-faq-kb")
+    RAG_KNOWLEDGE_BASE_ID = os.getenv("RAG_KNOWLEDGE_BASE_ID", "remittance-faq-kb")
     RAG_PROVIDER_CONFIG_ID = os.getenv("RAG_PROVIDER_CONFIG_ID", "azure-openai-llm-gpt-4o-mini")
     RAG_REQUEST_TIMEOUT = float(os.getenv("RAG_REQUEST_TIMEOUT", "30.0"))
     
