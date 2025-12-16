@@ -523,7 +523,7 @@ async def get_checkpointer():
         return _checkpointer
     
     mongodb_uri = os.getenv("MONGODB_URI")
-    mongodb_db_name = os.getenv("MONGODB_DB_NAME", "remittance_assistant")
+    mongodb_db_name = os.getenv("MONGODB_DB_NAME")
     
     if mongodb_uri:
         try:
@@ -574,7 +574,7 @@ def get_checkpointer_sync():
     
     # Production mode: Use MongoDB checkpointer
     mongodb_uri = os.getenv("MONGODB_URI")
-    mongodb_db_name = os.getenv("MONGODB_DB_NAME", "remittance-assistance-agent")
+    mongodb_db_name = os.getenv("MONGODB_DB_NAME")
     
     if not mongodb_uri:
         logger.warning("⚠️  MONGODB_URI not set, falling back to MemorySaver")
