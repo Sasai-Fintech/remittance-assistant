@@ -48,65 +48,65 @@ function SuggestionsComponent() {
 The user has selected Shona as their preferred language. You MUST generate ALL suggestions in Shona (ChiShona), not English.
 
 IMPORTANT: All suggestion text must be in Shona. Use these Shona phrases:
-- "Tarisa mari yangu" (Check my balance)
-- "Ona zvishandiswa" (View transactions)  
-- "Ratidza ruzivo rwemari" (Show financial insights)
+- "Tarisa mari yekuchinjana" (Check exchange rates)
+- "Tumira mari" (Send money)
+- "Ona mhando dzekutumira" (View transfer options)
 - "Wana rubatsiro" (Get help)
-- "Ona zvishandiswa zvichangobva" (View recent transactions)
-- "Ona mari yemuhomwe" (View wallet balance)
-- "Ratidza mari inopinda" (Show incoming money)
-- "Ratidza mari inobuda" (Show spending)
-- "Ratidza mari yekudyara" (Show investments)
+- "Bvunza mibvunzo" (Ask questions)
 
 DO NOT use English for suggestions when the user has selected Shona. All suggestion buttons must display Shona text.
 
 `
     : ``;
   
-  const baseInstructions = `Offer context-aware suggestions based on the conversation state. CRITICAL: Never suggest actions that have already been completed. Always prioritize financial insights and account management actions.`;
+  const baseInstructions = `Offer context-aware suggestions based on the conversation state for remittance (money transfer) operations. Source country is ALWAYS South Africa (ZAR).`;
   
   const instructions = languageInstruction + baseInstructions + `
 
-    Rules:
-    1. If the AI has confirmed a ticket was "successfully submitted" or "submitted", DO NOT suggest ${language === "sn" ? '"Simbisa kutumira"' : '"Confirm submission"'} - the ticket is already confirmed. Instead suggest: ${language === "sn" ? '"Tarisa mari yangu", "Ona zvishandiswa", "Ratidza ruzivo rwemari", kana "Wana rubatsiro rwakawanda"' : '"Check my balance", "View transactions", "Show financial insights", or "Get more help"'}
-    
-    2. If there's a pending ticket confirmation dialog visible (user hasn't confirmed yet), suggest ${language === "sn" ? '"Simbisa kutumira" kana "Kanzura tikiti"' : '"Confirm submission" or "Cancel ticket"'}
-    
-    3. If AI just summarized a transaction and asked "tell us what's wrong" or "what issue are you facing", suggest common transaction issues:
+    Rules for Remittance Suggestions:
+    1. For new conversations or when no specific context, suggest:
        ${language === "sn"
-         ? '- "Mutengi haana kugamuchira mari"\n       - "Mari yakabviswa kaviri"\n       - "Chishandiso chakakundikana"\n       - "Ndinoda kudzoserwa mari"\n       - "Mari isiri iyo yakabhadharwa"\n       - "Chipo hachina kushandiswa"'
-         : '- "Receiver has not received the payment"\n       - "Amount debited twice"\n       - "Transaction failed"\n       - "Need refund"\n       - "Wrong amount charged"\n       - "Offer not applied"'}
+         ? '- "Tarisa mari yekuchinjana"\n       - "Tumira mari kuZimbabwe"\n       - "Bvunza nezvekutumira mari"\n       - "Wana rubatsiro"'
+         : '- "Check exchange rates"\n       - "Send money to Zimbabwe"\n       - "Ask about transfer fees"\n       - "Get help"'}
     
-    4. If AI is providing resolution steps (e.g., "contact merchant with UTR"), suggest:
+    2. If user is browsing countries or AI showed country list, suggest specific popular destinations:
        ${language === "sn"
-         ? '- "Zvakanaka" kana "Ndinonzwisisa"\n       - "Ndakabata mutengesi, dambudziko harina kugadziriswa"\n       - "Dambudziko ragadziriswa"'
-         : '- "Okay" or "Got it"\n       - "Contacted merchant, issue not resolved"\n       - "Issue resolved"'}
+         ? '- "Tumira mari kuZimbabwe"\n       - "Tumira mari kuKenya"\n       - "Tumira mari kuNigeria"\n       - "Tumira mari kuIndia"'
+         : '- "Send to Zimbabwe"\n       - "Send to Kenya"\n       - "Send to Nigeria"\n       - "Send to India"'}
     
-    5. If user just viewed transactions, suggest: ${language === "sn" ? '"Wana rubatsiro nechishandiso", "Tarisa mari yangu", kana "Ratidza ruzivo rwemari"' : '"Get help with a transaction", "Check my balance", or "Show financial insights"'}
-    
-    6. If user is asking about a specific transaction, suggest ${language === "sn" ? '"Ona ruzivo rwechishandiso" kana "Zivisa dambudziko"' : '"View transaction details" or "Report an issue"'}
-    
-    7. If a ticket was just successfully submitted, suggest next logical steps like ${language === "sn" ? '"Tarisa mari yangu", "Ona zvishandiswa zvichangobva", kana "Ratidza ruzivo rwemari"' : '"Check my balance", "View recent transactions", or "Show financial insights"'}
-    
-    8. If the conversation shows the ticket is already processed/completed, suggest new actions, not confirmation actions
-    
-    9. If user asks about financial insights, analysis, or wants to see spending/incoming/investment breakdown, suggest:
-       ${language === "sn" 
-         ? '- "Ratidza kuyerera kwemari" (for overview bar chart)\n       - "Ongorora mari inopinda" (for detailed incoming breakdown)\n       - "Ongorora mari inobuda" (for detailed spending breakdown)\n       - "Ongorora mari yekudyara" (for detailed investment breakdown)'
-         : '- "Show cash flow" (for overview bar chart)\n       - "Analyze incoming" (for detailed incoming breakdown)\n       - "Analyze spends" (for detailed spending breakdown)\n       - "Analyze investment" (for detailed investment breakdown)'}
-    
-    10. For new conversations or when no specific context, ALWAYS include ${language === "sn" ? '"Ratidza ruzivo rwemari"' : '"Show financial insights"'} as one of the suggestions. Other good defaults are:
+    3. If AI just showed exchange rates, suggest:
        ${language === "sn"
-         ? '- "Tarisa mari yemuhomwe"\n       - "Ona zvishandiswa zvichangobva"\n       - "Ratidza ruzivo rwemari"\n       - "Wana rubatsiro nechishandiso"'
-         : '- "Check my wallet balance"\n       - "View recent transactions"\n       - "Show financial insights"\n       - "Get help with a transaction"'}
+         ? '- "Tumira mari" kana "Gadzira quote"\n       - "Shandura mari yakawanda"\n       - "Tarisa nyika dzimwe"\n       - "Bvunza nezvemitengo"'
+         : '- "Send money" or "Generate quote"\n       - "Check different amount"\n       - "View other countries"\n       - "Ask about fees"'}
     
-    11. NEVER suggest "Ask another question" - it's not relevant. Instead suggest specific actionable items.
+    4. If user asks about transfer fees or limits, suggest:
+       ${language === "sn"
+         ? '- "Mari shoma pashoma?"\n       - "Mari yakawanda zvikuru?"\n       - "Nguva inotorera here?"\n       - "Zvinodiwa here?"'
+         : '- "Minimum transfer amount?"\n       - "Maximum transfer limit?"\n       - "Transfer processing time?"\n       - "Required documents?"'}
     
-    Always check the last AI message - if it mentions "successfully submitted", "has been submitted", "ticket created", or similar completion phrases, do NOT suggest confirmation actions.
-    If AI asks "what's wrong" or "what issue", provide issue-specific suggestions, not generic ones.
-    If AI mentions financial insights or analysis, provide financial insights suggestions.
-    Keep suggestions concise (2-5 words), actionable, and relevant to the current conversation context.
-    Prioritize financial insights suggestions when appropriate.`;
+    5. If discussing a specific country, suggest:
+       ${language === "sn"
+         ? '- "Tarisa mari yekuchinjana"\n       - "Nzira dzekutumira mari dziripo?"\n       - "Mari shoma pashoma?"\n       - "Nguva inotorera?"'
+         : '- "Check current rate"\n       - "Available delivery methods?"\n       - "Transfer limits?"\n       - "Processing time?"'}
+    
+    6. If there's a pending ticket confirmation or support issue, suggest:
+       ${language === "sn"
+         ? '- "Simbisa kutumira" kana "Kanzura tikiti"\n       - "Wana rubatsiro rwakawanda"'
+         : '- "Confirm submission" or "Cancel ticket"\n       - "Get more help"'}
+    
+    7. If a ticket was successfully submitted, suggest:
+       ${language === "sn"
+         ? '- "Tarisa mari yekuchinjana"\n       - "Tumira mari"\n       - "Bvunza mibvunzo"'
+         : '- "Check exchange rates"\n       - "Send money"\n       - "Ask questions"'}
+    
+    8. NEVER suggest generic actions like "Ask another question" - always be specific to remittance operations
+    
+    9. Keep suggestions concise (2-5 words), actionable, and relevant to international money transfers from South Africa
+    
+    10. Always prioritize remittance-specific actions: checking rates, sending money, asking about fees/limits, selecting countries
+    
+    Remember: Source country is ALWAYS South Africa (ZAR) - never ask which country to send FROM, only ask destination.
+    Keep suggestions focused on remittance workflows and user needs.`;
   
   useCopilotChatSuggestions({
     instructions: instructions,

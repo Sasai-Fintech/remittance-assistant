@@ -1,32 +1,24 @@
 "use client";
 
-import { useCopilotAction } from "@copilotkit/react-core";
-import { useRef, useMemo } from "react";
-import { BalanceCard } from "@/components/widgets/BalanceCard";
-import { TransactionGrid } from "@/components/widgets/TransactionGrid";
+import { useCopilotAction, useCopilotChat } from "@copilotkit/react-core";
+import { useRef } from "react";
+import { CountrySelector } from "@/components/widgets/CountrySelector";
+import { ExchangeRateCard } from "@/components/widgets/ExchangeRateCard";
 import { TicketConfirmation } from "@/components/widgets/TicketConfirmation";
 import { TicketCard } from "@/components/widgets/TicketCard";
-import { Transaction } from "@/components/widgets/TransactionCard";
-import { FinancialInsightsChart } from "@/components/widgets/FinancialInsightsChart";
-import { CashFlowBarChart } from "@/components/widgets/CashFlowBarChart";
-import { FinancialInsights, CashFlowOverview } from "@/types/schemas";
+import { RecipientListCard } from "@/components/widgets/RecipientListCard";
+import { QuoteCard } from "@/components/widgets/QuoteCard";
+import { TransactionReceipt } from "@/components/widgets/TransactionReceipt";
 
 /**
- * Registers CopilotKit actions for rendering widgets inline in chat.
+ * Registers CopilotKit actions for rendering remittance widgets inline in chat.
  * Uses useCopilotAction with render to display widgets when tools are called.
  * The render function receives the tool result directly.
  * 
  * Reference: https://docs.copilotkit.ai/langgraph/generative-ui/backend-tools
  */
 export function RemittanceWidgets() {
-  // Track active tool calls to prevent duplicate widgets
-  // Use refs to track the latest call timestamp for each tool
-  // This ensures retries with same args are treated as new calls
-  const balanceCallRef = useRef<{ callId: string; timestamp: number } | null>(null);
-  const transactionsCallRef = useRef<{ callId: string; timestamp: number } | null>(null);
-  const ticketCallRef = useRef<{ callId: string; timestamp: number } | null>(null);
-  const cashFlowCallRef = useRef<{ callId: string; timestamp: number } | null>(null);
-  const insightsCallRefs = useRef<Map<string, { callId: string; timestamp: number }>>(new Map());
+  const { appendMessage } = useCopilotChat();
   const callCounterRef = useRef<number>(0);
 
   // Helper function to generate unique call ID from args and timestamp
@@ -34,74 +26,188 @@ export function RemittanceWidgets() {
     const argsKey = JSON.stringify(args || {});
     const timestamp = Date.now();
     const counter = callCounterRef.current++;
-    // Include counter to ensure uniqueness even if called at same millisecond
     return {
       callId: `${toolName}-${argsKey}-${counter}`,
       timestamp
     };
   };
 
-  // Register action for balance widget - name must match tool name
+  // Register action for receiving countries widget
   useCopilotAction({
-    name: "get_wallet_balance",
-    description: "Get the current wallet balance for the user",
-    parameters: [
-      {
-        name: "currency",
-        type: "string",
-        description: "The currency code (USD, EUR, GBP, ZWL)",
-        required: false,
-      },
-      {
-        name: "provider_code",
-        type: "string",
-        description: "The payment provider code",
-        required: false,
-      },
-    ],
-    render: ({ args, result, status }) => {
-      const callInfo = getCallId("get_wallet_balance", args);
-      const isLatestCall = !balanceCallRef.current || 
-                          balanceCallRef.current.timestamp <= callInfo.timestamp;
-      
-      // Update ref to track this as the latest call (always update for new calls)
-      if (isLatestCall) {
-        balanceCallRef.current = callInfo;
-      } else {
-        // This is an old call, don't render to prevent duplicates
-        return <></>;
-      }
+    name: "get_receiving_countries",
+    description: "Get list of countries where money can be sent from South Africa",
+    parameters: [],
+    render: ({ result, status }) => {
+      const callInfo = getCallId("get_receiving_countries", {});
 
       // Show loading state while tool is executing
       if (status !== "complete") {
         return (
-          <div key={callInfo.callId} className="bg-indigo-100 text-indigo-700 p-4 rounded-lg max-w-md">
-            <span className="animate-pulse">⚙️ Retrieving balance...</span>
+          <div key={callInfo.callId} className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 p-4 rounded-lg max-w-md">
+            <span className="animate-pulse">⚙️ Loading countries...</span>
           </div>
         );
       }
 
-      // Extract balance from the MCP tool result
-      // The result can be:
-      // 1. A number directly
-      // 2. A JSON string that needs parsing
-      // 3. An object with nested structure: {success: true, data: {balance: number, currency: string, ...}}
-      let balance = 0;
-      let currency = "USD";
-
       try {
-        // If result is a string, try to parse it as JSON
+        // Parse result if it's a string
         let parsedResult = result;
         if (typeof result === "string") {
           parsedResult = JSON.parse(result);
         }
 
-        // If it's a number, use it directly
-        if (typeof parsedResult === "number") {
-          balance = parsedResult;
+        // Extract countries from nested structure
+        const countries = parsedResult?.data?.receivingCountries || parsedResult?.receivingCountries || [];
+
+        if (!countries || countries.length === 0) {
+          return (
+            <div key={callInfo.callId} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
+              ⚠️ No destination countries available at the moment.
+            </div>
+          );
         }
-        // If it's an object, extract from nested structure
-        else if (typeof parsedResult === "object" && parsedResult !== null) {
+
+        // Handler for when user selects a country
+        const handleCountrySelect = (countryCode: string, currencyCode: string, countryName: string) => {
+          // Send a message to trigger exchange rate lookup
+          appendMessage({
+            role: "user",
+            content: `Show me the exchange rate for ${countryName} (${countryCode}) in ${currencyCode}`
+          });
+        };
+
+        return (
+          <div key={callInfo.callId} className="my-4">
+            <CountrySelector 
+              countries={countries} 
+              onSelect={handleCountrySelect}
+            />
+          </div>
+        );
+      } catch (error) {
+        console.error("[RemittanceWidgets] Error rendering country selector:", error);
+        return (
+          <div key={callInfo.callId} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
+            ⚠️ Error loading countries. Please try again.
+          </div>
+        );
+      }
+    },
+  });
+
+  // Register action for exchange rate widget
+  useCopilotAction({
+    name: "get_exchange_rate",
+    description: "Get exchange rate for sending money from South Africa",
+    parameters: [
+      {
+        name: "receiving_country",
+        type: "string",
+        description: "Destination country code (e.g., ZW, KE, NG)",
+        required: true,
+      },
+      {
+        name: "receiving_currency",
+        type: "string",
+        description: "Destination currency code (e.g., USD, KES, NGN)",
+        required: true,
+      },
+      {
+        name: "amount",
+        type: "number",
+        description: "Amount to send in ZAR",
+        required: false,
+      },
+      {
+        name: "receive",
+        type: "boolean",
+        description: "If true, amount is receiving amount; if false, amount is sending amount",
+        required: false,
+      },
+    ],
+    render: ({ args, result, status }) => {
+      const callInfo = getCallId("get_exchange_rate", args);
+
+      // Show loading state while tool is executing
+      if (status !== "complete") {
+        return (
+          <div key={callInfo.callId} className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 p-4 rounded-lg max-w-md">
+            <span className="animate-pulse">⚙️ Calculating exchange rate...</span>
+          </div>
+        );
+      }
+
+      try {
+        // Parse result if it's a string
+        let parsedResult = result;
+        if (typeof result === "string") {
+          parsedResult = JSON.parse(result);
+        }
+
+        // Extract products from nested structure
+        const products = parsedResult?.data?.items || parsedResult?.items || [];
+        const requestInfo = parsedResult?.request_info;
+
+        if (!products || products.length === 0) {
+          return (
+            <div key={callInfo.callId} className="bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 p-4 rounded-lg max-w-md">
+              ℹ️ No exchange rates available for this route at the moment.
+            </div>
+          );
+        }
+
+        return (
+          <div key={callInfo.callId} className="my-4">
+            <ExchangeRateCard
+              sendingCountry="South Africa"
+              receivingCountry={args.receiving_country || requestInfo?.receiving_country || "N/A"}
+              sendingCurrency="ZAR"
+              receivingCurrency={args.receiving_currency || requestInfo?.receiving_currency || "USD"}
+              products={products}
+              requestInfo={requestInfo}
+            />
+          </div>
+        );
+      } catch (error) {
+        console.error("[RemittanceWidgets] Error rendering exchange rate card:", error);
+        return (
+          <div key={callInfo.callId} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
+            ⚠️ Error loading exchange rates. Please try again.
+          </div>
+        );
+      }
+    },
+  });
+
+  // Register action for balance widget
+  useCopilotAction({
+    name: "get_balance",
+    description: "Get the user's account balance",
+    parameters: [],
+    render: ({ result, status }) => {
+      const callInfo = getCallId("get_balance", {});
+
+      // Show loading state while tool is executing
+      if (status !== "complete") {
+        return (
+          <div key={callInfo.callId} className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 p-4 rounded-lg max-w-md">
+            <span className="animate-pulse">⚙️ Loading balance...</span>
+          </div>
+        );
+      }
+
+      let balance = 0;
+      let currency = "USD";
+
+      try {
+        // Parse result if it's a string
+        let parsedResult = result;
+        if (typeof result === "string") {
+          parsedResult = JSON.parse(result);
+        }
+
+        // Extract balance from nested structure
+        if (typeof parsedResult === "object" && parsedResult !== null) {
           // Try different possible paths to the balance
           if (parsedResult.balance !== undefined) {
             balance = typeof parsedResult.balance === "number" ? parsedResult.balance : parseFloat(parsedResult.balance) || 0;
@@ -558,7 +664,7 @@ export function RemittanceWidgets() {
     renderAndWait: ({ args, status, handler }) => {
       // Extract subject and body from args (tool call arguments)
       const subject = args?.subject || "Support Request";
-      const body = args?.body || "User requested assistance with a transaction.";
+      const body = args?.body || "User requested assistance with a remittance transaction.";
 
       return (
         <TicketConfirmation
@@ -609,329 +715,232 @@ export function RemittanceWidgets() {
     ],
     render: ({ args, result, status }) => {
       const callInfo = getCallId("create_support_ticket", args);
-      const isLatestCall = !ticketCallRef.current || 
-                          ticketCallRef.current.timestamp <= callInfo.timestamp;
-      
-      // Update ref to track this as the latest call (always update for new calls)
-      if (isLatestCall) {
-        ticketCallRef.current = callInfo;
-      } else {
-        // This is an old call, don't render to prevent duplicates
-        return <></>;
-      }
 
       // Show loading state while tool is executing
       if (status !== "complete") {
         return (
-          <div key={callInfo.callId} className="bg-indigo-100 text-indigo-700 p-4 rounded-lg max-w-md">
+          <div key={callInfo.callId} className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 p-4 rounded-lg max-w-md">
             <span className="animate-pulse">⚙️ Creating support ticket...</span>
           </div>
         );
       }
 
-      // Extract ticket data from the MCP tool result
-      // The result structure: {success: true, data: {...ticket data...}}
-      let ticketData = null;
-
-      // Debug logging
-      console.log('🎫 Ticket creation result:', result);
-      console.log('🎫 Result type:', typeof result);
-
       try {
-        // If result is a string, try to parse it as JSON
+        // Parse result if it's a string
         let parsedResult = result;
         if (typeof result === "string") {
-          try {
-            parsedResult = JSON.parse(result);
-            console.log('🎫 Parsed JSON result:', parsedResult);
-          } catch (parseError) {
-            console.error('🎫 Failed to parse JSON:', parseError);
-          }
+          parsedResult = JSON.parse(result);
         }
 
-        console.log('🎫 Parsed result structure:', {
-          type: typeof parsedResult,
-          keys: typeof parsedResult === 'object' && parsedResult !== null ? Object.keys(parsedResult) : [],
-          hasData: typeof parsedResult === 'object' && parsedResult !== null ? 'data' in parsedResult : false,
-          dataKeys: typeof parsedResult === 'object' && parsedResult !== null && parsedResult.data ? Object.keys(parsedResult.data) : [],
-        });
+        // Extract ticket data from the result
+        const ticketData = parsedResult?.data?.ticket || parsedResult?.ticket || parsedResult;
+        
+        return (
+          <div key={callInfo.callId} className="my-4">
+            <TicketCard ticket={ticketData} />
+          </div>
+        );
+      } catch (error) {
+        console.error("[RemittanceWidgets] Error rendering ticket card:", error);
+        return (
+          <div key={callInfo.callId} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
+            ⚠️ Error creating ticket. Please try again.
+          </div>
+        );
+      }
+    },
+  });
 
-        // Extract ticket from nested structure
-        if (typeof parsedResult === "object" && parsedResult !== null) {
-          // Try different possible paths to the ticket data
-          if (parsedResult.ticket) {
-            ticketData = parsedResult.ticket;
-            console.log('🎫 Found ticket at result.ticket');
-          } else if (parsedResult.data?.ticket) {
-            ticketData = parsedResult.data.ticket;
-            console.log('🎫 Found ticket at result.data.ticket');
-          } else if (parsedResult.data && typeof parsedResult.data === 'object') {
-            // If data itself contains ticket fields, use it directly
-            if (parsedResult.data.id || parsedResult.data.ticketId || parsedResult.data.subject || parsedResult.data.ticketId) {
-              ticketData = parsedResult.data;
-              console.log('🎫 Found ticket at result.data');
-            }
-          } else if (parsedResult.id || parsedResult.ticketId || parsedResult.subject) {
-            // Result itself is the ticket
-            ticketData = parsedResult;
-            console.log('🎫 Result itself is the ticket');
-          }
+  // Register action for recipient list widget
+  useCopilotAction({
+    name: "get_recipient_list",
+    description: "Get the user's recipient list for money transfers",
+    parameters: [],
+    render: ({ result, status }) => {
+      const callInfo = getCallId("get_recipient_list", {});
+
+      // Show loading state while tool is executing
+      if (status !== "complete") {
+        return (
+          <div key={callInfo.callId} className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 p-4 rounded-lg max-w-md">
+            <span className="animate-pulse">⚙️ Loading recipient list...</span>
+          </div>
+        );
+      }
+
+      try {
+        // Parse result if it's a string
+        let parsedResult = result;
+        if (typeof result === "string") {
+          parsedResult = JSON.parse(result);
         }
 
-        // If no ticket data found, create a ticket object from the args and result
-        if (!ticketData) {
-          ticketData = {
-            subject: args?.subject || "Support Ticket",
-            description: args?.description || "",
-            type: args?.type || "General Enquiry",
-            name: args?.name || "",
-            phone: args?.phone || "",
-            status: parsedResult?.success ? "created" : "pending",
-            // Try to extract ticket ID from result
-            id: parsedResult?.data?.id || 
-                parsedResult?.data?.ticketId || 
-                parsedResult?.data?.ticket_id ||
-                parsedResult?.ticketId ||
-                parsedResult?.id ||
-                "Pending"
-          };
+        // API returns: { items: [...], total: 155, page: 1, count: 20 }
+        // Extract the full data structure
+        const items = parsedResult?.items || parsedResult?.data?.items || parsedResult?.recipients || parsedResult?.data?.recipients || [];
+        const total = parsedResult?.total || parsedResult?.data?.total || items.length;
+        const page = parsedResult?.page || parsedResult?.data?.page || 1;
+        const count = parsedResult?.count || parsedResult?.data?.count || items.length;
+
+        console.log("[RemittanceWidgets] Parsed recipient result:", parsedResult);
+        console.log("[RemittanceWidgets] Recipients count:", items.length);
+
+        if (!items || items.length === 0) {
+          return (
+            <div key={callInfo.callId} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
+              ⚠️ No recipients found. Add some recipients to your list.
+            </div>
+          );
         }
-      } catch (e) {
-        console.error('Error parsing ticket result:', e);
-        // Fallback: create ticket from args
-        ticketData = {
-          subject: args?.subject || "Support Ticket",
-          description: args?.description || "",
-          type: args?.type || "General Enquiry",
-          status: "created"
-        };
-      }
 
-      return <TicketCard key={callInfo.callId} ticket={ticketData} />;
-    },
-  });
-
-  // Register action for cash flow overview widget (bar chart)
-  useCopilotAction({
-    name: "get_cash_flow_overview",
-    description: "Get overall cash flow overview with incoming, investment, and spends totals",
-    parameters: [
-      {
-        name: "user_id",
-        type: "string",
-        description: "The user ID",
-        required: true,
-      },
-      {
-        name: "account",
-        type: "string",
-        description: "Account filter (e.g., 'all accounts')",
-        required: false,
-      },
-      {
-        name: "start_date",
-        type: "string",
-        description: "Start date for the period (YYYY-MM-DD)",
-        required: false,
-      },
-      {
-        name: "end_date",
-        type: "string",
-        description: "End date for the period (YYYY-MM-DD)",
-        required: false,
-      },
-    ],
-    render: ({ args, result, status }) => {
-      const callInfo = getCallId("get_cash_flow_overview", args);
-      const isLatestCall = !cashFlowCallRef.current || 
-                          cashFlowCallRef.current.timestamp <= callInfo.timestamp;
-      
-      // Update ref to track this as the latest call (always update for new calls)
-      if (isLatestCall) {
-        cashFlowCallRef.current = callInfo;
-      } else {
-        // This is an old call, don't render to prevent duplicates
-        return <></>;
-      }
-
-      if (status !== "complete") {
         return (
-          <div key={callInfo.callId} className="bg-indigo-100 text-indigo-700 p-4 rounded-lg max-w-md">
-            <span className="animate-pulse">⚙️ Loading cash flow overview...</span>
+          <div key={callInfo.callId} className="my-4">
+            <RecipientListCard 
+              items={items}
+              total={total}
+              page={page}
+              count={count}
+            />
+          </div>
+        );
+      } catch (error) {
+        console.error("[RemittanceWidgets] Error rendering recipient list:", error);
+        return (
+          <div key={callInfo.callId} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
+            ⚠️ Error loading recipients. Please try again.
           </div>
         );
       }
-
-      const overview = result as CashFlowOverview;
-      return <CashFlowBarChart key={callInfo.callId} overview={overview} />;
     },
   });
 
-  // Register action for incoming insights widget
+  // Widget 2: Generate Remittance Quote
   useCopilotAction({
-    name: "get_incoming_insights",
-    description: "Get financial insights for incoming transactions",
+    name: "generate_remittance_quote",
+    description: "Generate a detailed quote for sending money to a recipient with exchange rates, fees, and total costs",
     parameters: [
       {
-        name: "user_id",
+        name: "result",
         type: "string",
-        description: "The user ID",
-        required: true,
+        description: "Quote calculation result with rates, fees, and amounts",
       },
       {
-        name: "account",
+        name: "status",
         type: "string",
-        description: "Account filter (e.g., 'all accounts')",
-        required: false,
+        description: "Status of the quote generation",
       },
       {
-        name: "start_date",
-        type: "string",
-        description: "Start date for the period (YYYY-MM-DD)",
-        required: false,
-      },
-      {
-        name: "end_date",
-        type: "string",
-        description: "End date for the period (YYYY-MM-DD)",
-        required: false,
+        name: "callInfo",
+        type: "object",
+        description: "Call information",
       },
     ],
-    render: ({ args, result, status }) => {
-      const callInfo = getCallId("get_incoming_insights", args);
-      const currentCall = insightsCallRefs.current.get("get_incoming_insights");
-      const isLatestCall = !currentCall || currentCall.timestamp <= callInfo.timestamp;
-      
-      // Update ref to track this as the latest call (always update for new calls)
-      if (isLatestCall) {
-        insightsCallRefs.current.set("get_incoming_insights", callInfo);
-      } else {
-        // This is an old call, don't render to prevent duplicates
-        return <></>;
+    render: ({ result, status, callInfo }: any) => {
+      if (status !== "complete" || !result) {
+        return null;
       }
 
-      if (status !== "complete") {
+      // Generate unique key for this widget
+      const widgetKey = callInfo?.callId || `quote-${Date.now()}`;
+
+      try {
+        // Parse result if it's a string
+        let parsedResult = result;
+        if (typeof result === "string") {
+          parsedResult = JSON.parse(result);
+        }
+
+        console.log("[RemittanceWidgets] Parsed quote result:", parsedResult);
+
+        // Check for errors
+        if (parsedResult.error || !parsedResult.calculationId) {
+          return (
+            <div key={widgetKey} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
+              ⚠️ Failed to generate quote. {parsedResult.error || "Please try again."}
+            </div>
+          );
+        }
+
         return (
-          <div key={callInfo.callId} className="bg-indigo-100 text-indigo-700 p-4 rounded-lg max-w-md">
-            <span className="animate-pulse">⚙️ Analyzing incoming transactions...</span>
+          <div key={widgetKey} className="my-4">
+            <QuoteCard 
+              quote={parsedResult}
+            />
+          </div>
+        );
+      } catch (error) {
+        console.error("[RemittanceWidgets] Error rendering quote:", error);
+        return (
+          <div key={widgetKey} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
+            ⚠️ Error loading quote. Please try again.
           </div>
         );
       }
-
-      const insights = result as FinancialInsights;
-      return <FinancialInsightsChart key={callInfo.callId} insights={insights} />;
     },
   });
 
-  // Register action for investment insights widget
+  // Widget 3: Transaction Receipt
   useCopilotAction({
-    name: "get_investment_insights",
-    description: "Get financial insights for investment transactions",
+    name: "execute_remittance_transaction",
+    description: "Execute a remittance transaction and display the receipt after user confirms payment",
     parameters: [
       {
-        name: "user_id",
+        name: "result",
         type: "string",
-        description: "The user ID",
-        required: true,
+        description: "Transaction execution result with transactionId and receipt details",
       },
       {
-        name: "account",
+        name: "status",
         type: "string",
-        description: "Account filter (e.g., 'all accounts')",
-        required: false,
+        description: "Status of the transaction execution",
       },
       {
-        name: "start_date",
-        type: "string",
-        description: "Start date for the period (YYYY-MM-DD)",
-        required: false,
-      },
-      {
-        name: "end_date",
-        type: "string",
-        description: "End date for the period (YYYY-MM-DD)",
-        required: false,
+        name: "callInfo",
+        type: "object",
+        description: "Call information",
       },
     ],
-    render: ({ args, result, status }) => {
-      const callInfo = getCallId("get_investment_insights", args);
-      const currentCall = insightsCallRefs.current.get("get_investment_insights");
-      const isLatestCall = !currentCall || currentCall.timestamp <= callInfo.timestamp;
-      
-      // Update ref to track this as the latest call (always update for new calls)
-      if (isLatestCall) {
-        insightsCallRefs.current.set("get_investment_insights", callInfo);
-      } else {
-        // This is an old call, don't render to prevent duplicates
-        return <></>;
+    render: ({ result, status, callInfo }: any) => {
+      if (status !== "complete" || !result) {
+        return null;
       }
 
-      if (status !== "complete") {
+      // Generate unique key for this widget
+      const widgetKey = callInfo?.callId || `transaction-${Date.now()}`;
+
+      try {
+        // Parse result if it's a string
+        let parsedResult = result;
+        if (typeof result === "string") {
+          parsedResult = JSON.parse(result);
+        }
+
+        console.log("[RemittanceWidgets] Parsed transaction result:", parsedResult);
+
+        // Check for errors
+        if (parsedResult.error || !parsedResult.transactionId) {
+          return (
+            <div key={widgetKey} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
+              ⚠️ Transaction failed. {parsedResult.error || "Please try again."}
+            </div>
+          );
+        }
+
         return (
-          <div key={callInfo.callId} className="bg-indigo-100 text-indigo-700 p-4 rounded-lg max-w-md">
-            <span className="animate-pulse">⚙️ Analyzing investments...</span>
+          <div key={widgetKey} className="my-4">
+            <TransactionReceipt 
+              transaction={parsedResult}
+            />
+          </div>
+        );
+      } catch (error) {
+        console.error("[RemittanceWidgets] Error rendering transaction receipt:", error);
+        return (
+          <div key={widgetKey} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
+            ⚠️ Error loading transaction receipt. Please try again.
           </div>
         );
       }
-
-      const insights = result as FinancialInsights;
-      return <FinancialInsightsChart key={callInfo.callId} insights={insights} />;
-    },
-  });
-
-  // Register action for spends insights widget
-  useCopilotAction({
-    name: "get_spends_insights",
-    description: "Get financial insights for spending transactions",
-    parameters: [
-      {
-        name: "user_id",
-        type: "string",
-        description: "The user ID",
-        required: true,
-      },
-      {
-        name: "account",
-        type: "string",
-        description: "Account filter (e.g., 'all accounts')",
-        required: false,
-      },
-      {
-        name: "start_date",
-        type: "string",
-        description: "Start date for the period (YYYY-MM-DD)",
-        required: false,
-      },
-      {
-        name: "end_date",
-        type: "string",
-        description: "End date for the period (YYYY-MM-DD)",
-        required: false,
-      },
-    ],
-    render: ({ args, result, status }) => {
-      const callInfo = getCallId("get_spends_insights", args);
-      const currentCall = insightsCallRefs.current.get("get_spends_insights");
-      const isLatestCall = !currentCall || currentCall.timestamp <= callInfo.timestamp;
-      
-      // Update ref to track this as the latest call (always update for new calls)
-      if (isLatestCall) {
-        insightsCallRefs.current.set("get_spends_insights", callInfo);
-      } else {
-        // This is an old call, don't render to prevent duplicates
-        return <></>;
-      }
-
-      if (status !== "complete") {
-        return (
-          <div key={callInfo.callId} className="bg-indigo-100 text-indigo-700 p-4 rounded-lg max-w-md">
-            <span className="animate-pulse">⚙️ Analyzing spending patterns...</span>
-          </div>
-        );
-      }
-
-      const insights = result as FinancialInsights;
-      return <FinancialInsightsChart key={callInfo.callId} insights={insights} />;
     },
   });
 

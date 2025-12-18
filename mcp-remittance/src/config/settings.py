@@ -12,6 +12,11 @@ class APIEndpoints:
     login: str
     pin_verify: str
     refresh_token: str
+    # Remittance endpoints
+    countries: str
+    exchange_rate: str
+    recipient_list: str
+    # Legacy wallet endpoints (kept for backward compatibility if needed)
     wallet_balance: str
     transaction_history: str
     linked_cards: str
@@ -57,6 +62,11 @@ class SasaiConfig:
         login=f"{BASE_URL}/bff/v2/auth/token",
         pin_verify=f"{BASE_URL}/bff/v4/auth/pin/verify",
         refresh_token=f"{BASE_URL}/bff/v3/user/refreshToken",
+        # NEW: Remittance endpoints
+        countries=f"{BASE_URL}/remittance/v1/master/country",
+        exchange_rate=f"{BASE_URL}/remittance/v1/product/exchange/rate",
+        recipient_list=f"{BASE_URL}/remittance/v1/recipient/list",
+        # Legacy wallet endpoints
         wallet_balance=f"{BASE_URL}/bff/v1/wallet/profile/balance",
         transaction_history=f"{BASE_URL}/bff/v1/wallet/profile/transaction-history",
         linked_cards=f"{BASE_URL}/bff/v1/wallet/linked-cards",
@@ -125,7 +135,7 @@ class SasaiConfig:
     LOG_FORMAT = os.getenv("LOG_FORMAT", "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     
     # Server settings
-    SERVER_NAME = os.getenv("SERVER_NAME", "SasaiWalletOperationsServer")
+    SERVER_NAME = os.getenv("SERVER_NAME", "SasaiRemittanceOperationsServer")
     SERVER_VERSION = os.getenv("SERVER_VERSION", "2.0.0")
     
     # Feature flags
@@ -145,7 +155,7 @@ class SasaiConfig:
     def get_server_instructions(cls) -> str:
         """Get comprehensive server instructions."""
         return f"""
-        This server provides comprehensive wallet operations for the Sasai Payment Gateway.
+        This server provides comprehensive remittance operations for the Sasai Payment Gateway.
         
         Environment: {cls.ENVIRONMENT}
         Base URL: {cls.BASE_URL}
@@ -155,13 +165,19 @@ class SasaiConfig:
         2. All other tools automatically use the stored token
         
         Available Operations:
-        - Wallet balance and profile management
-        - Transaction history and details
-        - Linked cards and payment methods
-        - Airtime plans and mobile services
-        - Customer profile information
+        - Get receiving countries (destinations for remittance from South Africa)
+        - Get exchange rates for different destination countries
+        - Generate quotes for money transfers
+        - View transfer summaries
+        - Access remittance FAQs (via RAG service)
+        - Create support tickets
         - Health monitoring and token management
-        - Compliance knowledge and regulatory guidance (via RAG service)
+        
+        Remittance Flow:
+        1. Source Country: South Africa (ZAR) - FIXED
+        2. Get list of receiving countries using get_receiving_countries
+        3. Get exchange rates for a specific country using get_exchange_rate
+        4. Display rates and fees to user
         """
     
     @classmethod

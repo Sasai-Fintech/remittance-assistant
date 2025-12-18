@@ -10,6 +10,17 @@ const nextConfig = {
   // Optimize for faster compilation
   swcMinify: true,
   
+  // Configure external image domains
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+    ],
+  },
+  
   // Optimize module resolution and compilation
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],

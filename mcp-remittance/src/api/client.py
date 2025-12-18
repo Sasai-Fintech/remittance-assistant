@@ -1,6 +1,7 @@
 """HTTP client for Sasai Payment Gateway API."""
 
 import httpx
+import logging
 from typing import Dict, Any, Optional
 
 from config.settings import SasaiConfig
@@ -14,6 +15,8 @@ from core.exceptions import (
     RateLimitError,
     ServerError
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SasaiAPIClient:
@@ -258,3 +261,119 @@ class SasaiAPIClient:
     async def patch(self, endpoint: str, token: Optional[str] = None, **kwargs) -> Dict[Any, Any]:
         """Make a PATCH request."""
         return await self.make_authenticated_request("PATCH", endpoint, token=token, **kwargs)
+    
+    async def get_recipient_list(self, token: str, page: int = 1, count: int = 20) -> Dict[Any, Any]:
+        """
+        Fetch list of saved recipients/beneficiaries.
+        
+        Args:
+            token: Authentication bearer token
+            page: Page number for pagination (default: 1)
+            count: Number of items per page (default: 20, max: 50)
+            
+        Returns:
+            dict: Response with items, total, page, count
+        """
+        endpoint = f"{SasaiConfig.BASE_URL}/remittance/v1/recipient/list"
+        params = {
+            "page": page,
+            "count": min(count, 50)  # Limit to max 50
+        }
+        
+        logger.info(f"[API_CLIENT] Fetching recipients from {endpoint} with params {params}")
+        result = await self.get(endpoint, token=token, params=params)
+        logger.info(f"[API_CLIENT] Recipient API result: success={result.get('success')}, data keys={list(result.get('data', {}).keys())}")
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            logger.info(f"[API_CLIENT] Items in response: {len(data.get('items', []))}")
+            return data
+        else:
+            logger.warning(f"[API_CLIENT] Recipient API failed: {result}")
+            return {
+                "items": [],
+                "total": 0,
+                "page": page,
+                "count": count,
+                "error": "Failed to fetch recipients"
+            }
+    
+    async def calculate_rate(self, token: str, payload: Dict[Any, Any]) -> Dict[Any, Any]:
+        """
+        Calculate remittance quote with exchange rate, fees, and total amount.
+        
+        Args:
+            token: Authentication bearer token
+            payload: Request payload containing:
+                - sendingCountryId: ID of sending country (e.g., 204 for South Africa)
+                - receivingCountryId: ID of receiving country (e.g., 246 for Zimbabwe)
+                - sendingCurrencyId: ID of sending currency (e.g., 181 for ZAR)
+                - receivingCurrencyId: ID of receiving currency (e.g., 153 for USD)
+                - amount: Amount as string (e.g., "100.00")
+                - productId: Payout product ID (629=EcoCash, 12=Cash Pickup)
+                - receive: Boolean - if true, amount is recipient amount
+                - paymentMethodId: Payment method ID (usually "5")
+                - spgOrderId: Optional order ID
+                - notes: Optional notes dict
+                
+        Returns:
+            dict: Quote details with calculationId, rates, fees, amounts
+        """
+        endpoint = f"{SasaiConfig.BASE_URL}/remittance/v1/rate/calculation"
+        
+        logger.info(f"[API_CLIENT] Calculating rate at {endpoint}")
+        logger.info(f"[API_CLIENT] Payload: amount={payload.get('amount')}, productId={payload.get('productId')}")
+        
+        result = await self.post(endpoint, token=token, json_data=payload)
+        logger.info(f"[API_CLIENT] Rate calculation result: success={result.get('success')}")
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            logger.info(f"[API_CLIENT] Quote - Sending: {data.get('sendingAmount')}, Receiving: {data.get('recipientAmount')}, Rate: {data.get('rate')}, Fees: {data.get('fees')}, Total: {data.get('amountToPay')}")
+            return data
+        else:
+            logger.warning(f"[API_CLIENT] Rate calculation failed: {result}")
+            return {
+                "success": False,
+                "error": result.get("error", "Failed to calculate rate")
+            }
+    
+    async def execute_transaction(self, token: str, payload: Dict[Any, Any]) -> Dict[Any, Any]:
+        """
+        Execute a remittance transaction after quote confirmation.
+        
+        Args:
+            token: Authentication bearer token
+            payload: Request payload containing:
+                - reasonForTransfer: Reason code (e.g., "SOWF" - Support of Family)
+                - sourceOfFunds: Source code (e.g., "SAL" - Salary)
+                - beneficiaryId: Recipient/beneficiary ID
+                - calculationId: Quote calculation ID from previous step
+                - paymentMethodId: Payment method ID (e.g., "10-I")
+                
+        Returns:
+            dict: Transaction details with:
+                - transactionId: Unique transaction ID
+                - transactionDate: When transaction was created
+                - expiryDate: When transaction expires
+                - promocode: Applied promo code (if any)
+        """
+        endpoint = f"{SasaiConfig.BASE_URL}/remittance/v1/transaction"
+        
+        logger.info(f"[API_CLIENT] Executing transaction at {endpoint}")
+        logger.info(f"[API_CLIENT] Payload: beneficiaryId={payload.get('beneficiaryId')}, calculationId={payload.get('calculationId')}")
+        
+        result = await self.post(endpoint, token=token, json_data=payload)
+        logger.info(f"[API_CLIENT] Transaction result: success={result.get('success')}")
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            logger.info(f"[API_CLIENT] Transaction - ID: {data.get('transactionId')}, Date: {data.get('transactionDate')}")
+            return data
+        else:
+            logger.warning(f"[API_CLIENT] Transaction execution failed: {result}")
+            return {
+                "success": False,
+                "error": result.get("error", "Failed to execute transaction")
+            }
+
