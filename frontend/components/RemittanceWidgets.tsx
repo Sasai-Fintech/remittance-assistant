@@ -1,6 +1,6 @@
 "use client";
 
-import { useCopilotAction, useCopilotChat } from "@copilotkit/react-core";
+import { useCopilotAction } from "@copilotkit/react-core";
 import { useRef } from "react";
 import { CountrySelector } from "@/components/widgets/CountrySelector";
 import { ExchangeRateCard } from "@/components/widgets/ExchangeRateCard";
@@ -14,14 +14,22 @@ import { TransactionGrid } from "@/components/widgets/TransactionGrid";
 import type { Transaction } from "@/components/widgets/TransactionCard";
 
 /**
- * Registers CopilotKit actions for rendering remittance widgets inline in chat.
+ * Registers CopilotKit actions for rendering re    name: "execute_remittance_transaction",
+    description: "Execute the remittance transaction and send money to the recipient",
+    parameters: [],
+    render: ({ result, status, callInfo }: any) => {
+      if (status !== "complete" || !result) {
+        return <></>;
+      }
+
+      // Generate unique key for this widget
+      const widgetKey = callInfo?.callId || `transaction-${Date.now()}`;idgets inline in chat.
  * Uses useCopilotAction with render to display widgets when tools are called.
  * The render function receives the tool result directly.
  * 
  * Reference: https://docs.copilotkit.ai/langgraph/generative-ui/backend-tools
  */
 export function RemittanceWidgets() {
-  const { appendMessage } = useCopilotChat();
   const callCounterRef = useRef<number>(0);
   const transactionsCallRef = useRef<{ callId: string; timestamp: number } | null>(null);
 
@@ -73,11 +81,9 @@ export function RemittanceWidgets() {
 
         // Handler for when user selects a country
         const handleCountrySelect = (countryCode: string, currencyCode: string, countryName: string) => {
-          // Send a message to trigger exchange rate lookup
-          appendMessage({
-            role: "user",
-            content: `Show me the exchange rate for ${countryName} (${countryCode}) in ${currencyCode}`
-          });
+          // TODO: Trigger exchange rate lookup automatically
+          // For now, user will need to type the request manually
+          console.log(`Selected country: ${countryName} (${countryCode}) in ${currencyCode}`);
         };
 
         return (
@@ -825,7 +831,7 @@ export function RemittanceWidgets() {
     parameters: [],
     render: ({ result, status, callInfo }: any) => {
       if (status !== "complete" || !result) {
-        return null;
+        return <></>;
       }
 
       // Generate unique key for this widget
@@ -874,7 +880,7 @@ export function RemittanceWidgets() {
     parameters: [],
     render: ({ result, status, callInfo }: any) => {
       if (status !== "complete" || !result) {
-        return null;
+        return <></>;
       }
 
       // Generate unique key for this widget
