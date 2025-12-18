@@ -33,13 +33,16 @@ remittance-assistant/
 ## 🔧 Configuration Required
 
 ### 1. Environment Variables (.env)
+
+> **⚠️ Security Note:** Never commit credentials to version control. Use environment variables, a secrets vault (e.g., HashiCorp Vault, AWS Secrets Manager), or your platform's secrets management system. The values below are placeholders only.
+
 ```bash
 # Sasai API Credentials
 SASAI_ENVIRONMENT=sandbox
-SASAI_USERNAME=64543532-3dee-43bc-b42e-d6b503f7fbdb
-SASAI_PASSWORD=iW8I*0bZ
-SASAI_PIN=OcXNch0pf3OKT+SD9xpM3qVoL6sDV2boAVWQjPj4H1+9VJhg4GyBsqC8Hu/x06YA50wxknXQqlIF5BFnd98zALxZOCX1i+xoPHuXdNn2Xqai/rBBeQf4N5Bq3r0JoOoyWUO954T4/3Ax2K57flYn0vntFglo8gJGfSSvPk8PJaCaVHDWir3VFfGJ2/vR59gqt7C+QeMkEMIhba89KGdHmSybdzZ7DjW7T4IjIkVIcpOTD/KhWGLovRuO7ptMI8u5gXp9ut/ZK+4PnD17N0XNxYXZXVk4SHbp784Sl3lKbpAwE5YZEP79rmAt723xJuz/KEPatOocyFN7sV2j/C+WVg==
-SASAI_USER_REFERENCE_ID=eb89baad-302c-4a56-84b4-13607cfda5af
+SASAI_USERNAME=<your-username-uuid>
+SASAI_PASSWORD=<your-password>
+SASAI_PIN=<your-encrypted-pin>
+SASAI_USER_REFERENCE_ID=<your-user-reference-uuid>
 
 # API Configuration
 BASE_URL=https://sandbox.sasaipaymentgateway.com
@@ -52,7 +55,7 @@ RAG_KNOWLEDGE_BASE_ID=remittance-faq-kb
 RAG_PROVIDER_CONFIG_ID=azure-openai-llm-gpt-4o-mini
 
 # MongoDB
-MONGODB_URI=mongodb+srv://sasairagengine:j3ugUjql4I60TY52@sandbox.detzo.mongodb.net/?retryWrites=true&w=majority&appName=sandbox
+MONGODB_URI=<your-mongodb-connection-string>
 MONGODB_DB_NAME=remittance-assistant-dev
 
 # Token Manager
@@ -259,13 +262,24 @@ Navigate to: `http://localhost:3000`
 
 ## 📊 API Endpoints to Test Manually
 
+> **💡 Security Tip:** Use environment variables or a secrets manager to avoid exposing credentials. Replace placeholders below with your actual values or use `$SASAI_USERNAME` and `$SASAI_PASSWORD` from your environment.
+
 ### 1. Get Auth Token
 ```bash
+# Option 1: Using environment variables (recommended)
 curl --location 'https://sandbox.sasaipaymentgateway.com/bff/v2/auth/token' \
 --header 'Content-Type: application/json' \
 --data '{
-    "username": "64543532-3dee-43bc-b42e-d6b503f7fbdb",
-    "password": "iW8I*0bZ"
+    "username": "'"$SASAI_USERNAME"'",
+    "password": "'"$SASAI_PASSWORD"'"
+}'
+
+# Option 2: Using placeholders (replace before running)
+curl --location 'https://sandbox.sasaipaymentgateway.com/bff/v2/auth/token' \
+--header 'Content-Type: application/json' \
+--data '{
+    "username": "<your-username-uuid>",
+    "password": "<your-password>"
 }'
 ```
 

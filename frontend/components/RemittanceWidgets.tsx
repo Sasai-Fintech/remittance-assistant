@@ -818,23 +818,7 @@ export function RemittanceWidgets() {
   useCopilotAction({
     name: "generate_remittance_quote",
     description: "Generate a detailed quote for sending money to a recipient with exchange rates, fees, and total costs",
-    parameters: [
-      {
-        name: "result",
-        type: "string",
-        description: "Quote calculation result with rates, fees, and amounts",
-      },
-      {
-        name: "status",
-        type: "string",
-        description: "Status of the quote generation",
-      },
-      {
-        name: "callInfo",
-        type: "object",
-        description: "Call information",
-      },
-    ],
+    parameters: [],
     render: ({ result, status, callInfo }: any) => {
       if (status !== "complete" || !result) {
         return null;
@@ -883,23 +867,7 @@ export function RemittanceWidgets() {
   useCopilotAction({
     name: "execute_remittance_transaction",
     description: "Execute a remittance transaction and display the receipt after user confirms payment",
-    parameters: [
-      {
-        name: "result",
-        type: "string",
-        description: "Transaction execution result with transactionId and receipt details",
-      },
-      {
-        name: "status",
-        type: "string",
-        description: "Status of the transaction execution",
-      },
-      {
-        name: "callInfo",
-        type: "object",
-        description: "Call information",
-      },
-    ],
+    parameters: [],
     render: ({ result, status, callInfo }: any) => {
       if (status !== "complete" || !result) {
         return null;
