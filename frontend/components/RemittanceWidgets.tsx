@@ -9,6 +9,9 @@ import { TicketCard } from "@/components/widgets/TicketCard";
 import { RecipientListCard } from "@/components/widgets/RecipientListCard";
 import { QuoteCard } from "@/components/widgets/QuoteCard";
 import { TransactionReceipt } from "@/components/widgets/TransactionReceipt";
+import { BalanceCard } from "@/components/widgets/BalanceCard";
+import { TransactionGrid } from "@/components/widgets/TransactionGrid";
+import type { Transaction } from "@/components/widgets/TransactionCard";
 
 /**
  * Registers CopilotKit actions for rendering remittance widgets inline in chat.
@@ -20,6 +23,7 @@ import { TransactionReceipt } from "@/components/widgets/TransactionReceipt";
 export function RemittanceWidgets() {
   const { appendMessage } = useCopilotChat();
   const callCounterRef = useRef<number>(0);
+  const transactionsCallRef = useRef<{ callId: string; timestamp: number } | null>(null);
 
   // Helper function to generate unique call ID from args and timestamp
   const getCallId = (toolName: string, args: any): { callId: string; timestamp: number } => {
