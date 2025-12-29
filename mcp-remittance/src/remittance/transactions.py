@@ -17,78 +17,55 @@ logger = logging.getLogger(__name__)
 
 
 async def execute_remittance_transaction(
-    beneficiary_id: str,
-    calculation_id: str,
-    payment_method_id: str = "10-I",
-    reason_for_transfer: str = "SOWF",
-    source_of_funds: str = "SAL",
+    transaction_id: str,
+    payment_method_code: str,
     ctx: Context | None = None
 ) -> dict[str, Any]:
     """
-    Execute a remittance transaction after quote confirmation.
+    Complete/execute transaction using transactionId from quote.
+    
+    This is Step 4 in the remittance flow: Uses PATCH to finalize the transaction
+    with ONLY the transactionId (from Step 3) and paymentMethodCode (from Step 4a).
+    
+    Flow Context:
+    - Step 1: get_exchange_rate shows multiple vendor options
+    - Step 2: calculate_remittance_quote locks rate and gets calculationId
+    - Step 3: generate_remittance_quote_from_calculation creates quote and gets transactionId
+    - Step 4a: get_payment_options shows available payment methods
+    - Step 4b: THIS FUNCTION - Complete the transaction with selected payment method
     
     This completes the money transfer by:
-    - Creating the transaction with the beneficiary account
-    - Using the locked-in quote from calculation
-    - Processing the payment
-    - Returning transaction receipt
+    - Using the transactionId from the quote (Step 3)
+    - Using the paymentMethodCode selected by user (Step 4a)
+    - Finalizing the payment with PATCH request
+    - Returning final transaction receipt and confirmation
     
-    CRITICAL: beneficiary_id must be from the account that matches the quote's productId!
-    
-    HOW TO SELECT THE CORRECT ACCOUNT:
-    1. Get productId from the quote response (e.g., 629 for EcoCash)
-    2. Find the account in recipient.accounts[] where:
-       account.linkedProducts[].productId == quote.productId
-    3. Use that account's "id" field as the beneficiary_id parameter
-    
-    Example from get_recipient_list API response:
-    {
-      "beneficiaryId": "12345",  // <-- Don't use this top-level field
-      "firstName": "John",
-      "accounts": [
-        {
-          "id": "77192529",  // <-- Use THIS if quote.productId = 629
-          "beneficiaryPayoutMethod": "EcoCash",
-          "linkedProducts": [{"productId": 629, "accountName": "EcoCash"}]
-        },
-        {
-          "id": "77192530",  // <-- Use THIS if quote.productId = 12
-          "beneficiaryPayoutMethod": "Cash Pickup",
-          "linkedProducts": [{"productId": 12, "accountName": "Cash"}]
-        }
-      ]
-    }
-    
-    Common Parameters:
-    - reason_for_transfer: "SOWF" (Support of Family), "GIFT" (Gift), etc.
-    - source_of_funds: "SAL" (Salary), "SAV" (Savings), "BUS" (Business), etc.
-    - payment_method_id: "10-I" (default payment method)
+    CRITICAL: The PATCH API only requires TWO fields:
+    - transactionId: From Step 3 (quote generation)
+    - paymentMethodCode: From Step 4a (user selected, e.g., "eft", "cash", "card")
     
     Args:
-        beneficiary_id: Account ID where account.linkedProducts[].productId matches quote.productId
-        calculation_id: Quote calculation ID from generate_remittance_quote
-        payment_method_id: Payment method ID (default: "10-I")
-        reason_for_transfer: Reason code (default: "SOWF" - Support of Family)
-        source_of_funds: Source code (default: "SAL" - Salary)
+        transaction_id: Transaction ID from generate_remittance_quote_from_calculation (Step 3)
+        payment_method_code: Payment method code from payment options selection (Step 4a)
         ctx: MCP context (optional)
         
     Returns:
-        dict: Transaction receipt with:
-            - transactionId: Unique transaction ID
-            - transactionDate: When transaction was created
-            - expiryDate: When transaction expires
-            - promocode: Applied promo code (if any)
+        dict: Final transaction receipt with confirmation details
             
     Example Response:
         {
-            "transactionId": "71866575",
-            "transactionDate": "2025-12-17 15:02:26",
-            "expiryDate": "2025-12-18 15:02:26",
-            "promocode": null
+            "success": true,
+            "message": "Transaction completed successfully",
+            "data": {
+                "transactionId": "71866575",
+                "status": "completed",
+                "confirmationNumber": "ABC123XYZ"
+            }
         }
     """
     try:
-        logger.info(f"[EXECUTE_TRANSACTION] Executing transaction for beneficiary={beneficiary_id}, calculation={calculation_id}")
+        logger.info(f"[EXECUTE_TRANSACTION] Step 4: Completing transaction={transaction_id}")
+        logger.info(f"[EXECUTE_TRANSACTION] Payment method code: {payment_method_code}")
         
         # Get or generate authentication token
         token = token_manager.get_token()
@@ -108,22 +85,31 @@ async def execute_remittance_transaction(
             token = token_result.get("token")
             logger.info("[EXECUTE_TRANSACTION] Successfully generated new token")
         
-        # Prepare request payload
+        # Prepare request payload for Step 4 (PATCH)
+        # PATCH requires ONLY TWO fields: transactionId and paymentMethodCode
         payload = {
-            "reasonForTransfer": reason_for_transfer,
-            "sourceOfFunds": source_of_funds,
-            "beneficiaryId": beneficiary_id,
-            "calculationId": calculation_id,
-            "paymentMethodId": payment_method_id,
+            "transactionId": transaction_id,
+            "paymentMethodCode": payment_method_code
         }
         
         logger.info(f"[EXECUTE_TRANSACTION] Request payload: {payload}")
         
-        # Make API call
+        # Make API call to Step 4 endpoint (PATCH /v1/transaction)
         client = SasaiAPIClient()
         response = await client.execute_transaction(token=token, payload=payload)
         
         logger.info(f"[EXECUTE_TRANSACTION] API Response: {response}")
+        
+        # Extract transactionUrl from response if present
+        if response and isinstance(response, dict):
+            data = response.get("data", {})
+            transaction_url = data.get("transactionUrl")
+            
+            if transaction_url:
+                logger.info(f"[EXECUTE_TRANSACTION] Transaction URL found: {transaction_url}")
+                # Add transactionUrl to top level for easy access
+                response["transactionUrl"] = transaction_url
+                response["message"] = f"Transaction initiated. Please complete payment at: {transaction_url}"
         
         return response
         

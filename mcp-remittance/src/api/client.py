@@ -300,7 +300,10 @@ class SasaiAPIClient:
     
     async def calculate_rate(self, token: str, payload: Dict[Any, Any]) -> Dict[Any, Any]:
         """
-        Calculate remittance quote with exchange rate, fees, and total amount.
+        Calculate locked-in rate for selected vendor and get calculationId.
+        
+        This is Step 2 in the flow: After user selects a vendor from exchange rates,
+        this locks in the rate and generates a calculationId for quote generation.
         
         Args:
             token: Authentication bearer token
@@ -317,11 +320,11 @@ class SasaiAPIClient:
                 - notes: Optional notes dict
                 
         Returns:
-            dict: Quote details with calculationId, rates, fees, amounts
+            dict: Rate calculation details with calculationId, rates, fees, amounts
         """
         endpoint = f"{SasaiConfig.BASE_URL}/remittance/v1/rate/calculation"
         
-        logger.info(f"[API_CLIENT] Calculating rate at {endpoint}")
+        logger.info(f"[API_CLIENT] Calculating rate (Step 2) at {endpoint}")
         logger.info(f"[API_CLIENT] Payload: amount={payload.get('amount')}, productId={payload.get('productId')}")
         
         result = await self.post(endpoint, token=token, json_data=payload)
@@ -329,7 +332,7 @@ class SasaiAPIClient:
         
         if result.get("success"):
             data = result.get("data", {})
-            logger.info(f"[API_CLIENT] Quote - Sending: {data.get('sendingAmount')}, Receiving: {data.get('recipientAmount')}, Rate: {data.get('rate')}, Fees: {data.get('fees')}, Total: {data.get('amountToPay')}")
+            logger.info(f"[API_CLIENT] Calculation - ID: {data.get('calculationId')}, Sending: {data.get('sendingAmount')}, Receiving: {data.get('recipientAmount')}, Rate: {data.get('rate')}, Fees: {data.get('fees')}, Total: {data.get('amountToPay')}")
             return data
         else:
             logger.warning(f"[API_CLIENT] Rate calculation failed: {result}")
@@ -338,37 +341,113 @@ class SasaiAPIClient:
                 "error": result.get("error", "Failed to calculate rate")
             }
     
-    async def execute_transaction(self, token: str, payload: Dict[Any, Any]) -> Dict[Any, Any]:
+    async def generate_quote(self, token: str, payload: Dict[Any, Any]) -> Dict[Any, Any]:
         """
-        Execute a remittance transaction after quote confirmation.
+        Generate quote using calculationId from rate calculation.
+        
+        This is Step 3 in the flow: Uses the calculationId from Step 2 to generate
+        a quote and returns a transactionId.
         
         Args:
             token: Authentication bearer token
             payload: Request payload containing:
                 - reasonForTransfer: Reason code (e.g., "SOWF" - Support of Family)
                 - sourceOfFunds: Source code (e.g., "SAL" - Salary)
-                - beneficiaryId: Recipient/beneficiary ID
-                - calculationId: Quote calculation ID from previous step
+                - beneficiaryId: Recipient/beneficiary account ID
+                - calculationId: Calculation ID from rate calculation (Step 2)
                 - paymentMethodId: Payment method ID (e.g., "10-I")
                 
         Returns:
-            dict: Transaction details with:
-                - transactionId: Unique transaction ID
-                - transactionDate: When transaction was created
-                - expiryDate: When transaction expires
+            dict: Quote details with:
+                - transactionId: Unique transaction ID for this quote
+                - transactionDate: When quote was created
+                - expiryDate: When quote expires
                 - promocode: Applied promo code (if any)
         """
         endpoint = f"{SasaiConfig.BASE_URL}/remittance/v1/transaction"
         
-        logger.info(f"[API_CLIENT] Executing transaction at {endpoint}")
+        logger.info(f"[API_CLIENT] Generating quote (Step 3 - POST) at {endpoint}")
         logger.info(f"[API_CLIENT] Payload: beneficiaryId={payload.get('beneficiaryId')}, calculationId={payload.get('calculationId')}")
         
         result = await self.post(endpoint, token=token, json_data=payload)
-        logger.info(f"[API_CLIENT] Transaction result: success={result.get('success')}")
+        logger.info(f"[API_CLIENT] Quote generation result: success={result.get('success')}")
         
         if result.get("success"):
             data = result.get("data", {})
-            logger.info(f"[API_CLIENT] Transaction - ID: {data.get('transactionId')}, Date: {data.get('transactionDate')}")
+            logger.info(f"[API_CLIENT] Quote - TransactionID: {data.get('transactionId')}, Date: {data.get('transactionDate')}, Expiry: {data.get('expiryDate')}")
+            return data
+        else:
+            logger.warning(f"[API_CLIENT] Quote generation failed: {result}")
+            return {
+                "success": False,
+                "error": result.get("error", "Failed to generate quote")
+            }
+    
+    async def get_payment_options(self, token: str, service_type: str = "ZAPersonPaymentOptions") -> Dict[Any, Any]:
+        """
+        Get available payment options for transaction execution.
+        
+        This is Step 4a in the flow: Get payment methods available for the user
+        before executing the transaction.
+        
+        Args:
+            token: Authentication bearer token
+            service_type: Service type for payment options (default: "ZAPersonPaymentOptions")
+                
+        Returns:
+            dict: Payment options list with payment method details
+        """
+        endpoint = f"{SasaiConfig.BASE_URL}/bff/v1/payment/options"
+        params = {"serviceType": service_type}
+        
+        logger.info(f"[API_CLIENT] Getting payment options (Step 4a) at {endpoint}")
+        logger.info(f"[API_CLIENT] Service type: {service_type}")
+        
+        result = await self.get(endpoint, token=token, params=params, require_auth=True)
+        logger.info(f"[API_CLIENT] Payment options result: success={result.get('success')}")
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            logger.info(f"[API_CLIENT] Retrieved payment options successfully")
+            return data
+        else:
+            logger.warning(f"[API_CLIENT] Failed to get payment options: {result}")
+            return {
+                "success": False,
+                "error": result.get("error", "Failed to get payment options")
+            }
+    
+    async def execute_transaction(self, token: str, payload: Dict[Any, Any]) -> Dict[Any, Any]:
+        """
+        Complete/execute transaction using transactionId from quote.
+        
+        This is Step 4b in the flow: Uses PATCH to finalize the transaction
+        with the transactionId from Step 3 and paymentMethodCode from Step 4a.
+        
+        Args:
+            token: Authentication bearer token
+            payload: Request payload containing:
+                - transactionId: Transaction ID from quote generation (Step 3)
+                - beneficiaryId: Beneficiary account ID (from Step 3)
+                - calculationId: Calculation ID (from Step 2)
+                - paymentMethodCode: Payment method code from payment options (Step 4a)
+                - reasonForTransfer: Reason code (e.g., "SOWF")
+                - sourceOfFunds: Source code (e.g., "SAL")
+                
+        Returns:
+            dict: Final transaction receipt with confirmation details
+        """
+        endpoint = f"{SasaiConfig.BASE_URL}/remittance/v1/transaction"
+        
+        logger.info(f"[API_CLIENT] Executing transaction (Step 4b - PATCH) at {endpoint}")
+        logger.info(f"[API_CLIENT] Payload: transactionId={payload.get('transactionId')}, paymentMethodCode={payload.get('paymentMethodCode')}")
+        
+        result = await self.patch(endpoint, token=token, json_data=payload)
+        logger.info(f"[API_CLIENT] Transaction execution result: success={result.get('success')}")
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            logger.info(f"[API_CLIENT] Transaction completed successfully")
             return data
         else:
             logger.warning(f"[API_CLIENT] Transaction execution failed: {result}")

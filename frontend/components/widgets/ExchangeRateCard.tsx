@@ -2,7 +2,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, DollarSign, TrendingUp, Banknote } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowRight, DollarSign, TrendingUp, Banknote, Send } from "lucide-react";
+import { useState } from "react";
 
 interface ExchangeProduct {
   productName: string;
@@ -38,6 +42,7 @@ interface ExchangeRateCardProps {
     amount: number;
     receive: boolean;
   };
+  onSendMoney?: (amount: number, selectedProduct: ExchangeProduct) => void;
 }
 
 export function ExchangeRateCard({
@@ -47,7 +52,11 @@ export function ExchangeRateCard({
   receivingCurrency,
   products,
   requestInfo,
+  onSendMoney,
 }: ExchangeRateCardProps) {
+  const [amount, setAmount] = useState<string>("100");
+  const [selectedProduct, setSelectedProduct] = useState<ExchangeProduct>(products[0]);
+
   if (!products || products.length === 0) {
     return (
       <Card className="w-full max-w-2xl mx-auto">
@@ -60,7 +69,20 @@ export function ExchangeRateCard({
     );
   }
 
-  const mainProduct = products[0]; // Best/primary product
+  const mainProduct = selectedProduct;
+  const rate = parseFloat(mainProduct.rate);
+  const amountNum = parseFloat(amount) || 0;
+  
+  // Calculate amounts based on rate for 1 unit
+  const receiveAmount = amountNum * rate;
+  const fees = parseFloat(mainProduct.fees);
+  const totalToPay = amountNum + fees;
+
+  const handleSendMoney = () => {
+    if (onSendMoney && amountNum > 0) {
+      onSendMoney(amountNum, mainProduct);
+    }
+  };
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 shadow-xl border-2 border-blue-200 dark:border-blue-800">
@@ -74,24 +96,50 @@ export function ExchangeRateCard({
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Main Rate Display */}
-        <div className="flex items-center justify-between bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-md">
-          <div className="text-center flex-1">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">You Send</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              {sendingCurrency} {parseFloat(mainProduct.sendingAmount).toFixed(2)}
-            </p>
+        {/* Amount Input Section */}
+        <div className="bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-md space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="amount" className="text-sm font-medium">
+              How much do you want to send?
+            </Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                  {sendingCurrency}
+                </span>
+                <Input
+                  id="amount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="pl-16 text-lg font-semibold"
+                  placeholder="100"
+                />
+              </div>
+            </div>
           </div>
-          
-          <div className="px-4">
-            <ArrowRight className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-          </div>
-          
-          <div className="text-center flex-1">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">They Receive</p>
-            <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-              {receivingCurrency} {parseFloat(mainProduct.receivingAmount).toFixed(2)}
-            </p>
+
+          {/* Live Calculation Display */}
+          <div className="flex items-center justify-between pt-2">
+            <div className="text-center flex-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">You Send</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {sendingCurrency} {amountNum.toFixed(2)}
+              </p>
+            </div>
+            
+            <div className="px-4">
+              <ArrowRight className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            
+            <div className="text-center flex-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">They Receive</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {receivingCurrency} {receiveAmount.toFixed(2)}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -110,7 +158,7 @@ export function ExchangeRateCard({
               <p className="text-gray-600 dark:text-gray-400">Exchange Rate</p>
             </div>
             <p className="font-semibold text-lg">
-              1 {sendingCurrency} = {parseFloat(mainProduct.rate).toFixed(4)} {receivingCurrency}
+              1 {sendingCurrency} = {rate.toFixed(4)} {receivingCurrency}
             </p>
           </div>
           
@@ -120,14 +168,14 @@ export function ExchangeRateCard({
               <p className="text-gray-600 dark:text-gray-400">Transfer Fee</p>
             </div>
             <p className="font-semibold text-lg">
-              {sendingCurrency} {parseFloat(mainProduct.fees).toFixed(2)}
+              {sendingCurrency} {fees.toFixed(2)}
             </p>
           </div>
           
           <div className="bg-white dark:bg-zinc-800 p-4 rounded-lg">
             <p className="text-gray-600 dark:text-gray-400 mb-1">Total to Pay</p>
             <p className="font-semibold text-xl text-blue-600 dark:text-blue-400">
-              {sendingCurrency} {parseFloat(mainProduct.amountToPay).toFixed(2)}
+              {sendingCurrency} {totalToPay.toFixed(2)}
             </p>
           </div>
           
@@ -137,6 +185,16 @@ export function ExchangeRateCard({
             <p className="text-xs text-gray-500 mt-1">{mainProduct.productName}</p>
           </div>
         </div>
+
+        {/* Send Money Button */}
+        <Button
+          onClick={handleSendMoney}
+          disabled={amountNum <= 0}
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-6 text-lg shadow-lg"
+        >
+          <Send className="mr-2 h-5 w-5" />
+          Send Money ({sendingCurrency} {amountNum.toFixed(2)})
+        </Button>
 
         {/* Transfer Limits */}
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">

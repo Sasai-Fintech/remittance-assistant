@@ -8,6 +8,8 @@ import { TicketConfirmation } from "@/components/widgets/TicketConfirmation";
 import { TicketCard } from "@/components/widgets/TicketCard";
 import { RecipientListCard } from "@/components/widgets/RecipientListCard";
 import { QuoteCard } from "@/components/widgets/QuoteCard";
+import { PaymentOptionsCard } from "@/components/widgets/PaymentOptionsCard";
+import { PaymentGatewayWidget } from "@/components/widgets/PaymentGatewayWidget";
 import { TransactionReceipt } from "@/components/widgets/TransactionReceipt";
 import { BalanceCard } from "@/components/widgets/BalanceCard";
 import { TransactionGrid } from "@/components/widgets/TransactionGrid";
@@ -32,6 +34,10 @@ import type { Transaction } from "@/components/widgets/TransactionCard";
 export function RemittanceWidgets() {
   const callCounterRef = useRef<number>(0);
   const transactionsCallRef = useRef<{ callId: string; timestamp: number } | null>(null);
+  
+  // Store the selected amount for the current transaction flow
+  const selectedAmountRef = useRef<number>(100); // Default amount
+  const selectedCountryRef = useRef<string>(""); // Store selected country
 
   // Helper function to generate unique call ID from args and timestamp
   const getCallId = (toolName: string, args: any): { callId: string; timestamp: number } => {
@@ -81,9 +87,96 @@ export function RemittanceWidgets() {
 
         // Handler for when user selects a country
         const handleCountrySelect = (countryCode: string, currencyCode: string, countryName: string) => {
-          // TODO: Trigger exchange rate lookup automatically
-          // For now, user will need to type the request manually
-          console.log(`Selected country: ${countryName} (${countryCode}) in ${currencyCode}`);
+          // Programmatically send message to agent to check exchange rates
+          const message = `Check exchange rates for ${countryName}`;
+          
+          // Function to find chat input and send message
+          const sendMessage = () => {
+            const selectors = [
+              'textarea[placeholder*="message" i]',
+              'textarea[placeholder*="type" i]',
+              'textarea[data-testid*="input"]',
+              'textarea',
+              'input[type="text"]'
+            ];
+
+            let chatInput: HTMLTextAreaElement | HTMLInputElement | null = null;
+            for (const selector of selectors) {
+              chatInput = document.querySelector(selector) as HTMLTextAreaElement | HTMLInputElement;
+              if (chatInput) break;
+            }
+
+            if (!chatInput) {
+              console.warn('[CountrySelector] Could not find chat input');
+              return;
+            }
+
+            // Focus and set value
+            chatInput.focus();
+            chatInput.value = message;
+
+            // Trigger input event for React
+            const inputEvent = new InputEvent('input', {
+              bubbles: true,
+              cancelable: true,
+              data: message,
+              inputType: 'insertText'
+            });
+            chatInput.dispatchEvent(inputEvent);
+
+            // Trigger change event
+            const changeEvent = new Event('change', { bubbles: true });
+            chatInput.dispatchEvent(changeEvent);
+
+            // Try clicking send button with retries (wait for React to enable it)
+            let attempts = 0;
+            const maxAttempts = 20; // Increased attempts
+            const tryClickSend = () => {
+              // Try multiple selectors to find the send button
+              const selectors = [
+                'button[type="submit"]',
+                'button[aria-label*="send" i]',
+                'button[aria-label*="submit" i]',
+                'form button[type="button"]',
+                'form button:not([type="button"]):not([type="reset"])',
+                '[data-testid*="send"]'
+              ];
+
+              let sendButton: HTMLButtonElement | null = null;
+              for (const selector of selectors) {
+                const btn = document.querySelector(selector) as HTMLButtonElement;
+                if (btn && btn.offsetParent !== null) { // Check if visible
+                  sendButton = btn;
+                  console.log(`[CountrySelector] Found button with selector: ${selector}`, btn);
+                  break;
+                }
+              }
+
+              if (sendButton) {
+                console.log(`[CountrySelector] Attempt ${attempts + 1}: Button disabled=${sendButton.disabled}`);
+                if (!sendButton.disabled) {
+                  console.log('[CountrySelector] ✅ Clicking send button');
+                  sendButton.click();
+                  return true;
+                }
+              } else {
+                console.warn(`[CountrySelector] Attempt ${attempts + 1}: Send button not found`);
+              }
+              
+              attempts++;
+              if (attempts < maxAttempts) {
+                setTimeout(tryClickSend, 150); // Increased delay
+              } else {
+                console.warn('[CountrySelector] ❌ Send button not enabled/found after all retries');
+              }
+              return false;
+            };
+            
+            setTimeout(tryClickSend, 200); // Increased initial delay
+          };
+
+          // Execute immediately
+          setTimeout(sendMessage, 50);
         };
 
         return (
@@ -175,6 +268,104 @@ export function RemittanceWidgets() {
               receivingCurrency={args.receiving_currency || requestInfo?.receiving_currency || "USD"}
               products={products}
               requestInfo={requestInfo}
+              onSendMoney={(amount, selectedProduct) => {
+                // Store the amount for use in subsequent steps
+                selectedAmountRef.current = amount;
+                
+                // Get country and currency from args
+                const countryName = args.receiving_country || requestInfo?.receiving_country || "the destination";
+                selectedCountryRef.current = countryName;
+                
+                const message = `I want to send ${amount} ZAR to ${countryName}. Show me my recipients.`;
+                
+                // Function to send message
+                const sendMessage = () => {
+                  const selectors = [
+                    'textarea[placeholder*="message" i]',
+                    'textarea[placeholder*="type" i]',
+                    'textarea[data-testid*="input"]',
+                    'textarea',
+                    'input[type="text"]'
+                  ];
+
+                  let chatInput: HTMLTextAreaElement | HTMLInputElement | null = null;
+                  for (const selector of selectors) {
+                    chatInput = document.querySelector(selector) as HTMLTextAreaElement | HTMLInputElement;
+                    if (chatInput) break;
+                  }
+
+                  if (!chatInput) {
+                    console.warn('[ExchangeRateCard] Could not find chat input');
+                    return;
+                  }
+
+                  // Focus and set value
+                  chatInput.focus();
+                  chatInput.value = message;
+
+                  // Trigger input event for React
+                  const inputEvent = new InputEvent('input', {
+                    bubbles: true,
+                    cancelable: true,
+                    data: message,
+                    inputType: 'insertText'
+                  });
+                  chatInput.dispatchEvent(inputEvent);
+
+                  // Trigger change event
+                  const changeEvent = new Event('change', { bubbles: true });
+                  chatInput.dispatchEvent(changeEvent);
+
+                  // Try clicking send button with retries (wait for React to enable it)
+                  let attempts = 0;
+                  const maxAttempts = 20;
+                  const tryClickSend = () => {
+                    // Try multiple selectors to find the send button
+                    const buttonSelectors = [
+                      'button[type="submit"]',
+                      'button[aria-label*="send" i]',
+                      'button[aria-label*="submit" i]',
+                      'form button[type="button"]',
+                      'form button:not([type="button"]):not([type="reset"])',
+                      '[data-testid*="send"]'
+                    ];
+
+                    let sendButton: HTMLButtonElement | null = null;
+                    for (const selector of buttonSelectors) {
+                      const btn = document.querySelector(selector) as HTMLButtonElement;
+                      if (btn && btn.offsetParent !== null) {
+                        sendButton = btn;
+                        console.log(`[ExchangeRateCard] Found button with selector: ${selector}`, btn);
+                        break;
+                      }
+                    }
+
+                    if (sendButton) {
+                      console.log(`[ExchangeRateCard] Attempt ${attempts + 1}: Button disabled=${sendButton.disabled}`);
+                      if (!sendButton.disabled) {
+                        console.log('[ExchangeRateCard] ✅ Clicking send button');
+                        sendButton.click();
+                        return true;
+                      }
+                    } else {
+                      console.warn(`[ExchangeRateCard] Attempt ${attempts + 1}: Send button not found`);
+                    }
+                    
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                      setTimeout(tryClickSend, 150);
+                    } else {
+                      console.warn('[ExchangeRateCard] ❌ Send button not enabled/found after all retries');
+                    }
+                    return false;
+                  };
+                  
+                  setTimeout(tryClickSend, 200);
+                };
+
+                // Execute immediately
+                setTimeout(sendMessage, 50);
+              }}
             />
           </div>
         );
@@ -810,6 +1001,103 @@ export function RemittanceWidgets() {
               total={total}
               page={page}
               count={count}
+              onSelectRecipient={(recipient, account) => {
+                // Use the stored amount from the exchange rate widget
+                const amount = selectedAmountRef.current || 100;
+                
+                // Programmatically send message to request quote for this recipient
+                const fullName = `${recipient.firstName} ${recipient.middleName || ''} ${recipient.lastName}`.trim();
+                const payoutMethod = account.nickname || account.accountName;
+                const message = `Generate a quote to send ${amount} ZAR to ${fullName} via ${payoutMethod}`;
+                
+                // Function to send message
+                const sendMessage = () => {
+                  const selectors = [
+                    'textarea[placeholder*="message" i]',
+                    'textarea[placeholder*="type" i]',
+                    'textarea[data-testid*="input"]',
+                    'textarea',
+                    'input[type="text"]'
+                  ];
+
+                  let chatInput: HTMLTextAreaElement | HTMLInputElement | null = null;
+                  for (const selector of selectors) {
+                    chatInput = document.querySelector(selector) as HTMLTextAreaElement | HTMLInputElement;
+                    if (chatInput) break;
+                  }
+
+                  if (!chatInput) {
+                    console.warn('[RecipientListCard] Could not find chat input');
+                    return;
+                  }
+
+                  // Focus and set value
+                  chatInput.focus();
+                  chatInput.value = message;
+
+                  // Trigger input event for React
+                  const inputEvent = new InputEvent('input', {
+                    bubbles: true,
+                    cancelable: true,
+                    data: message,
+                    inputType: 'insertText'
+                  });
+                  chatInput.dispatchEvent(inputEvent);
+
+                  // Trigger change event
+                  const changeEvent = new Event('change', { bubbles: true });
+                  chatInput.dispatchEvent(changeEvent);
+
+                  // Try clicking send button with retries (wait for React to enable it)
+                  let attempts = 0;
+                  const maxAttempts = 20; // Increased attempts
+                  const tryClickSend = () => {
+                    // Try multiple selectors to find the send button
+                    const selectors = [
+                      'button[type="submit"]',
+                      'button[aria-label*="send" i]',
+                      'button[aria-label*="submit" i]',
+                      'form button[type="button"]',
+                      'form button:not([type="button"]):not([type="reset"])',
+                      '[data-testid*="send"]'
+                    ];
+
+                    let sendButton: HTMLButtonElement | null = null;
+                    for (const selector of selectors) {
+                      const btn = document.querySelector(selector) as HTMLButtonElement;
+                      if (btn && btn.offsetParent !== null) { // Check if visible
+                        sendButton = btn;
+                        console.log(`[RecipientListCard] Found button with selector: ${selector}`, btn);
+                        break;
+                      }
+                    }
+
+                    if (sendButton) {
+                      console.log(`[RecipientListCard] Attempt ${attempts + 1}: Button disabled=${sendButton.disabled}`);
+                      if (!sendButton.disabled) {
+                        console.log('[RecipientListCard] ✅ Clicking send button');
+                        sendButton.click();
+                        return true;
+                      }
+                    } else {
+                      console.warn(`[RecipientListCard] Attempt ${attempts + 1}: Send button not found`);
+                    }
+                    
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                      setTimeout(tryClickSend, 150); // Increased delay
+                    } else {
+                      console.warn('[RecipientListCard] ❌ Send button not enabled/found after all retries');
+                    }
+                    return false;
+                  };
+                  
+                  setTimeout(tryClickSend, 200); // Increased initial delay
+                };
+
+                // Execute immediately
+                setTimeout(sendMessage, 50);
+              }}
             />
           </div>
         );
@@ -846,8 +1134,8 @@ export function RemittanceWidgets() {
 
         console.log("[RemittanceWidgets] Parsed quote result:", parsedResult);
 
-        // Check for errors
-        if (parsedResult.error || !parsedResult.calculationId) {
+        // Check for errors - NOW expecting transactionId (the quote ID) instead of calculationId
+        if (parsedResult.error || !parsedResult.transactionId) {
           return (
             <div key={widgetKey} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
               ⚠️ Failed to generate quote. {parsedResult.error || "Please try again."}
@@ -859,6 +1147,105 @@ export function RemittanceWidgets() {
           <div key={widgetKey} className="my-4">
             <QuoteCard 
               quote={parsedResult}
+              onConfirm={(transactionId) => {
+                // Programmatically send confirmation message to agent
+                const recipientName = parsedResult.recipientName || "the recipient";
+                const message = `Yes, proceed with the transfer to ${recipientName}`;
+                
+                // Function to send message
+                const sendMessage = () => {
+                  const selectors = [
+                    'textarea[placeholder*="message" i]',
+                    'textarea[placeholder*="type" i]',
+                    'textarea[data-testid*="input"]',
+                    'textarea',
+                    'input[type="text"]'
+                  ];
+
+                  let chatInput: HTMLTextAreaElement | HTMLInputElement | null = null;
+                  for (const selector of selectors) {
+                    chatInput = document.querySelector(selector) as HTMLTextAreaElement | HTMLInputElement;
+                    if (chatInput) break;
+                  }
+
+                  if (!chatInput) {
+                    console.warn('[QuoteCard] Could not find chat input');
+                    return;
+                  }
+
+                  // Focus and set value
+                  chatInput.focus();
+                  chatInput.value = message;
+
+                  // Trigger input event for React
+                  const inputEvent = new InputEvent('input', {
+                    bubbles: true,
+                    cancelable: true,
+                    data: message,
+                    inputType: 'insertText'
+                  });
+                  chatInput.dispatchEvent(inputEvent);
+
+                  // Trigger change event
+                  const changeEvent = new Event('change', { bubbles: true });
+                  chatInput.dispatchEvent(changeEvent);
+
+                  // Try clicking send button with retries (wait for React to enable it)
+                  let attempts = 0;
+                  const maxAttempts = 20; // Increased attempts
+                  const tryClickSend = () => {
+                    // Try multiple selectors to find the send button
+                    const selectors = [
+                      'button[type="submit"]',
+                      'button[aria-label*="send" i]',
+                      'button[aria-label*="submit" i]',
+                      'form button[type="button"]',
+                      'form button:not([type="button"]):not([type="reset"])',
+                      '[data-testid*="send"]'
+                    ];
+
+                    let sendButton: HTMLButtonElement | null = null;
+                    for (const selector of selectors) {
+                      const btn = document.querySelector(selector) as HTMLButtonElement;
+                      if (btn && btn.offsetParent !== null) { // Check if visible
+                        sendButton = btn;
+                        console.log(`[QuoteCard] Found button with selector: ${selector}`, btn);
+                        break;
+                      }
+                    }
+
+                    if (sendButton) {
+                      console.log(`[QuoteCard] Attempt ${attempts + 1}: Button disabled=${sendButton.disabled}`);
+                      if (!sendButton.disabled) {
+                        console.log('[QuoteCard] ✅ Clicking send button');
+                        sendButton.click();
+                        return true;
+                      }
+                    } else {
+                      console.warn(`[QuoteCard] Attempt ${attempts + 1}: Send button not found`);
+                    }
+                    
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                      setTimeout(tryClickSend, 150); // Increased delay
+                    } else {
+                      console.warn('[QuoteCard] ❌ Send button not enabled/found after all retries');
+                    }
+                    return false;
+                  };
+                  
+                  setTimeout(tryClickSend, 200); // Increased initial delay
+                  
+                  setTimeout(tryClickSend, 100);
+                };
+
+                // Execute immediately
+                setTimeout(sendMessage, 50);
+              }}
+              onCancel={() => {
+                // Optionally send cancellation message
+                console.log('[QuoteCard] Transfer cancelled by user');
+              }}
             />
           </div>
         );
@@ -873,10 +1260,141 @@ export function RemittanceWidgets() {
     },
   });
 
-  // Widget 3: Transaction Receipt
+  // Widget 2.5: Payment Options Selection
+  useCopilotAction({
+    name: "get_payment_options",
+    description: "Get available payment methods for completing the transaction",
+    parameters: [],
+    render: ({ result, status, callInfo }: any) => {
+      if (status !== "complete" || !result) {
+        return <></>;
+      }
+
+      // Generate unique key for this widget
+      const widgetKey = callInfo?.callId || `payment-options-${Date.now()}`;
+
+      try {
+        // Parse result if it's a string
+        let parsedResult = result;
+        if (typeof result === "string") {
+          parsedResult = JSON.parse(result);
+        }
+
+        console.log("[RemittanceWidgets] Parsed payment options result:", parsedResult);
+
+        return (
+          <div key={widgetKey} className="my-4">
+            <PaymentOptionsCard 
+              options={parsedResult}
+              onSelectPayment={(paymentMethodCode, paymentMethodName) => {
+                // Programmatically send message to complete transaction with selected payment method
+                const message = `Complete the transaction with ${paymentMethodName} payment method`;
+                
+                // Function to send message
+                const sendMessage = () => {
+                  const selectors = [
+                    'textarea[placeholder*="message" i]',
+                    'textarea[placeholder*="type" i]',
+                    'textarea[data-testid*="input"]',
+                    'textarea',
+                    'input[type="text"]'
+                  ];
+
+                  let chatInput: HTMLTextAreaElement | HTMLInputElement | null = null;
+                  for (const selector of selectors) {
+                    chatInput = document.querySelector(selector) as HTMLTextAreaElement | HTMLInputElement;
+                    if (chatInput) break;
+                  }
+
+                  if (!chatInput) {
+                    console.warn('[PaymentOptionsCard] Could not find chat input');
+                    return;
+                  }
+
+                  // Focus and set value
+                  chatInput.focus();
+                  chatInput.value = message;
+
+                  // Trigger input event for React
+                  const inputEvent = new InputEvent('input', {
+                    bubbles: true,
+                    cancelable: true,
+                    data: message,
+                    inputType: 'insertText'
+                  });
+                  chatInput.dispatchEvent(inputEvent);
+
+                  // Trigger change event
+                  const changeEvent = new Event('change', { bubbles: true });
+                  chatInput.dispatchEvent(changeEvent);
+
+                  // Try clicking send button with retries
+                  let attempts = 0;
+                  const maxAttempts = 20;
+                  const tryClickSend = () => {
+                    const buttonSelectors = [
+                      'button[type="submit"]',
+                      'button[aria-label*="send" i]',
+                      'button[aria-label*="submit" i]',
+                      'form button[type="button"]',
+                      'form button:not([type="button"]):not([type="reset"])',
+                      '[data-testid*="send"]'
+                    ];
+
+                    let sendButton: HTMLButtonElement | null = null;
+                    for (const selector of buttonSelectors) {
+                      const btn = document.querySelector(selector) as HTMLButtonElement;
+                      if (btn && btn.offsetParent !== null) {
+                        sendButton = btn;
+                        console.log(`[PaymentOptionsCard] Found button with selector: ${selector}`, btn);
+                        break;
+                      }
+                    }
+
+                    if (sendButton) {
+                      console.log(`[PaymentOptionsCard] Attempt ${attempts + 1}: Button disabled=${sendButton.disabled}`);
+                      if (!sendButton.disabled) {
+                        console.log('[PaymentOptionsCard] ✅ Clicking send button');
+                        sendButton.click();
+                        return true;
+                      }
+                    } else {
+                      console.warn(`[PaymentOptionsCard] Attempt ${attempts + 1}: Send button not found`);
+                    }
+                    
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                      setTimeout(tryClickSend, 150);
+                    } else {
+                      console.warn('[PaymentOptionsCard] ❌ Send button not enabled/found after all retries');
+                    }
+                    return false;
+                  };
+                  
+                  setTimeout(tryClickSend, 200);
+                };
+
+                // Execute immediately
+                setTimeout(sendMessage, 50);
+              }}
+            />
+          </div>
+        );
+      } catch (error) {
+        console.error("[RemittanceWidgets] Error rendering payment options:", error);
+        return (
+          <div key={widgetKey} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
+            ⚠️ Error loading payment options. Please try again.
+          </div>
+        );
+      }
+    },
+  });
+
+  // Widget 3: Transaction Receipt / Payment Gateway
   useCopilotAction({
     name: "execute_remittance_transaction",
-    description: "Execute a remittance transaction and display the receipt after user confirms payment",
+    description: "Execute a remittance transaction and display payment gateway or receipt",
     parameters: [],
     render: ({ result, status, callInfo }: any) => {
       if (status !== "complete" || !result) {
@@ -896,10 +1414,37 @@ export function RemittanceWidgets() {
         console.log("[RemittanceWidgets] Parsed transaction result:", parsedResult);
 
         // Check for errors
-        if (parsedResult.error || !parsedResult.transactionId) {
+        if (parsedResult.error) {
           return (
             <div key={widgetKey} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
-              ⚠️ Transaction failed. {parsedResult.error || "Please try again."}
+              ⚠️ Transaction failed. {parsedResult.error}
+            </div>
+          );
+        }
+
+        // Check if transactionUrl is present - show payment gateway widget
+        if (parsedResult.transactionUrl || parsedResult.actionUrl) {
+          const transactionUrl = parsedResult.transactionUrl || parsedResult.actionUrl;
+          
+          return (
+            <div key={widgetKey} className="my-4">
+              <PaymentGatewayWidget
+                transactionUrl={transactionUrl}
+                transactionId={parsedResult.transactionId}
+                recipientName={parsedResult.recipientName}
+                sendingAmount={parsedResult.sendingAmount}
+                recipientAmount={parsedResult.recipientAmount}
+                payoutMethod={parsedResult.payoutMethod}
+              />
+            </div>
+          );
+        }
+
+        // No transactionUrl - show regular receipt
+        if (!parsedResult.transactionId) {
+          return (
+            <div key={widgetKey} className="bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 p-4 rounded-lg max-w-md">
+              ⚠️ Transaction initiated but no confirmation received. Please check with support.
             </div>
           );
         }
@@ -912,10 +1457,10 @@ export function RemittanceWidgets() {
           </div>
         );
       } catch (error) {
-        console.error("[RemittanceWidgets] Error rendering transaction receipt:", error);
+        console.error("[RemittanceWidgets] Error rendering transaction:", error);
         return (
           <div key={widgetKey} className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 p-4 rounded-lg max-w-md">
-            ⚠️ Error loading transaction receipt. Please try again.
+            ⚠️ Error loading transaction. Please try again.
           </div>
         );
       }
