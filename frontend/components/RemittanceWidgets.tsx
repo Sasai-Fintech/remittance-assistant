@@ -16,16 +16,104 @@ import { TransactionGrid } from "@/components/widgets/TransactionGrid";
 import type { Transaction } from "@/components/widgets/TransactionCard";
 
 /**
- * Registers CopilotKit actions for rendering re    name: "execute_remittance_transaction",
-    description: "Execute the remittance transaction and send money to the recipient",
-    parameters: [],
-    render: ({ result, status, callInfo }: any) => {
-      if (status !== "complete" || !result) {
-        return <></>;
-      }
+ * Reusable helper to programmatically send a message to the chat
+ * 
+ * @param message - The message text to send
+ * @param logPrefix - Optional prefix for console logs (e.g., "[CountrySelector]")
+ * @param maxAttempts - Maximum number of attempts to find/enable send button (default: 20)
+ * @param retryDelay - Delay between retry attempts in ms (default: 150)
+ */
+const sendChatMessage = (
+  message: string,
+  logPrefix: string = "[Chat]",
+  maxAttempts: number = 20,
+  retryDelay: number = 150
+): void => {
+  // Find chat input using common selectors
+  const inputSelectors = [
+    'textarea[placeholder*="message" i]',
+    'textarea[placeholder*="type" i]',
+    'textarea[data-testid*="input"]',
+    'textarea',
+    'input[type="text"]'
+  ];
 
-      // Generate unique key for this widget
-      const widgetKey = callInfo?.callId || `transaction-${Date.now()}`;idgets inline in chat.
+  let chatInput: HTMLTextAreaElement | HTMLInputElement | null = null;
+  for (const selector of inputSelectors) {
+    chatInput = document.querySelector(selector) as HTMLTextAreaElement | HTMLInputElement;
+    if (chatInput) break;
+  }
+
+  if (!chatInput) {
+    console.warn(`${logPrefix} Could not find chat input`);
+    return;
+  }
+
+  // Focus and set value
+  chatInput.focus();
+  chatInput.value = message;
+
+  // Trigger input event for React
+  const inputEvent = new InputEvent('input', {
+    bubbles: true,
+    cancelable: true,
+    data: message,
+    inputType: 'insertText'
+  });
+  chatInput.dispatchEvent(inputEvent);
+
+  // Trigger change event
+  const changeEvent = new Event('change', { bubbles: true });
+  chatInput.dispatchEvent(changeEvent);
+
+  // Try clicking send button with retries (wait for React to enable it)
+  let attempts = 0;
+  const tryClickSend = () => {
+    // Try multiple selectors to find the send button
+    const buttonSelectors = [
+      'button[type="submit"]',
+      'button[aria-label*="send" i]',
+      'button[aria-label*="submit" i]',
+      'form button[type="button"]',
+      'form button:not([type="button"]):not([type="reset"])',
+      '[data-testid*="send"]'
+    ];
+
+    let sendButton: HTMLButtonElement | null = null;
+    for (const selector of buttonSelectors) {
+      const btn = document.querySelector(selector) as HTMLButtonElement;
+      if (btn && btn.offsetParent !== null) { // Check if visible
+        sendButton = btn;
+        console.log(`${logPrefix} Found button with selector: ${selector}`, btn);
+        break;
+      }
+    }
+
+    if (sendButton) {
+      console.log(`${logPrefix} Attempt ${attempts + 1}: Button disabled=${sendButton.disabled}`);
+      if (!sendButton.disabled) {
+        console.log(`${logPrefix} ✅ Clicking send button`);
+        sendButton.click();
+        return true;
+      }
+    } else {
+      console.warn(`${logPrefix} Attempt ${attempts + 1}: Send button not found`);
+    }
+    
+    attempts++;
+    if (attempts < maxAttempts) {
+      setTimeout(tryClickSend, retryDelay);
+    } else {
+      console.warn(`${logPrefix} ❌ Send button not enabled/found after all retries`);
+    }
+    return false;
+  };
+  
+  setTimeout(tryClickSend, 200);
+};
+
+/**
+ * Registers CopilotKit actions for rendering widgets inline in chat.
  * Uses useCopilotAction with render to display widgets when tools are called.
  * The render function receives the tool result directly.
  * 
@@ -90,93 +178,8 @@ export function RemittanceWidgets() {
           // Programmatically send message to agent to check exchange rates
           const message = `Check exchange rates for ${countryName}`;
           
-          // Function to find chat input and send message
-          const sendMessage = () => {
-            const selectors = [
-              'textarea[placeholder*="message" i]',
-              'textarea[placeholder*="type" i]',
-              'textarea[data-testid*="input"]',
-              'textarea',
-              'input[type="text"]'
-            ];
-
-            let chatInput: HTMLTextAreaElement | HTMLInputElement | null = null;
-            for (const selector of selectors) {
-              chatInput = document.querySelector(selector) as HTMLTextAreaElement | HTMLInputElement;
-              if (chatInput) break;
-            }
-
-            if (!chatInput) {
-              console.warn('[CountrySelector] Could not find chat input');
-              return;
-            }
-
-            // Focus and set value
-            chatInput.focus();
-            chatInput.value = message;
-
-            // Trigger input event for React
-            const inputEvent = new InputEvent('input', {
-              bubbles: true,
-              cancelable: true,
-              data: message,
-              inputType: 'insertText'
-            });
-            chatInput.dispatchEvent(inputEvent);
-
-            // Trigger change event
-            const changeEvent = new Event('change', { bubbles: true });
-            chatInput.dispatchEvent(changeEvent);
-
-            // Try clicking send button with retries (wait for React to enable it)
-            let attempts = 0;
-            const maxAttempts = 20; // Increased attempts
-            const tryClickSend = () => {
-              // Try multiple selectors to find the send button
-              const selectors = [
-                'button[type="submit"]',
-                'button[aria-label*="send" i]',
-                'button[aria-label*="submit" i]',
-                'form button[type="button"]',
-                'form button:not([type="button"]):not([type="reset"])',
-                '[data-testid*="send"]'
-              ];
-
-              let sendButton: HTMLButtonElement | null = null;
-              for (const selector of selectors) {
-                const btn = document.querySelector(selector) as HTMLButtonElement;
-                if (btn && btn.offsetParent !== null) { // Check if visible
-                  sendButton = btn;
-                  console.log(`[CountrySelector] Found button with selector: ${selector}`, btn);
-                  break;
-                }
-              }
-
-              if (sendButton) {
-                console.log(`[CountrySelector] Attempt ${attempts + 1}: Button disabled=${sendButton.disabled}`);
-                if (!sendButton.disabled) {
-                  console.log('[CountrySelector] ✅ Clicking send button');
-                  sendButton.click();
-                  return true;
-                }
-              } else {
-                console.warn(`[CountrySelector] Attempt ${attempts + 1}: Send button not found`);
-              }
-              
-              attempts++;
-              if (attempts < maxAttempts) {
-                setTimeout(tryClickSend, 150); // Increased delay
-              } else {
-                console.warn('[CountrySelector] ❌ Send button not enabled/found after all retries');
-              }
-              return false;
-            };
-            
-            setTimeout(tryClickSend, 200); // Increased initial delay
-          };
-
-          // Execute immediately
-          setTimeout(sendMessage, 50);
+          // Execute after a short delay
+          setTimeout(() => sendChatMessage(message, "[CountrySelector]"), 50);
         };
 
         return (
@@ -278,93 +281,8 @@ export function RemittanceWidgets() {
                 
                 const message = `I want to send ${amount} ZAR to ${countryName}. Show me my recipients.`;
                 
-                // Function to send message
-                const sendMessage = () => {
-                  const selectors = [
-                    'textarea[placeholder*="message" i]',
-                    'textarea[placeholder*="type" i]',
-                    'textarea[data-testid*="input"]',
-                    'textarea',
-                    'input[type="text"]'
-                  ];
-
-                  let chatInput: HTMLTextAreaElement | HTMLInputElement | null = null;
-                  for (const selector of selectors) {
-                    chatInput = document.querySelector(selector) as HTMLTextAreaElement | HTMLInputElement;
-                    if (chatInput) break;
-                  }
-
-                  if (!chatInput) {
-                    console.warn('[ExchangeRateCard] Could not find chat input');
-                    return;
-                  }
-
-                  // Focus and set value
-                  chatInput.focus();
-                  chatInput.value = message;
-
-                  // Trigger input event for React
-                  const inputEvent = new InputEvent('input', {
-                    bubbles: true,
-                    cancelable: true,
-                    data: message,
-                    inputType: 'insertText'
-                  });
-                  chatInput.dispatchEvent(inputEvent);
-
-                  // Trigger change event
-                  const changeEvent = new Event('change', { bubbles: true });
-                  chatInput.dispatchEvent(changeEvent);
-
-                  // Try clicking send button with retries (wait for React to enable it)
-                  let attempts = 0;
-                  const maxAttempts = 20;
-                  const tryClickSend = () => {
-                    // Try multiple selectors to find the send button
-                    const buttonSelectors = [
-                      'button[type="submit"]',
-                      'button[aria-label*="send" i]',
-                      'button[aria-label*="submit" i]',
-                      'form button[type="button"]',
-                      'form button:not([type="button"]):not([type="reset"])',
-                      '[data-testid*="send"]'
-                    ];
-
-                    let sendButton: HTMLButtonElement | null = null;
-                    for (const selector of buttonSelectors) {
-                      const btn = document.querySelector(selector) as HTMLButtonElement;
-                      if (btn && btn.offsetParent !== null) {
-                        sendButton = btn;
-                        console.log(`[ExchangeRateCard] Found button with selector: ${selector}`, btn);
-                        break;
-                      }
-                    }
-
-                    if (sendButton) {
-                      console.log(`[ExchangeRateCard] Attempt ${attempts + 1}: Button disabled=${sendButton.disabled}`);
-                      if (!sendButton.disabled) {
-                        console.log('[ExchangeRateCard] ✅ Clicking send button');
-                        sendButton.click();
-                        return true;
-                      }
-                    } else {
-                      console.warn(`[ExchangeRateCard] Attempt ${attempts + 1}: Send button not found`);
-                    }
-                    
-                    attempts++;
-                    if (attempts < maxAttempts) {
-                      setTimeout(tryClickSend, 150);
-                    } else {
-                      console.warn('[ExchangeRateCard] ❌ Send button not enabled/found after all retries');
-                    }
-                    return false;
-                  };
-                  
-                  setTimeout(tryClickSend, 200);
-                };
-
-                // Execute immediately
-                setTimeout(sendMessage, 50);
+                // Execute after a short delay
+                setTimeout(() => sendChatMessage(message, "[ExchangeRateCard]"), 50);
               }}
             />
           </div>
@@ -701,137 +619,8 @@ export function RemittanceWidgets() {
         // This triggers the guided support flow
         const message = `I need help with my transaction to ${displayName}${dateStr ? ` on ${dateStr}` : ""}${amount ? ` for ${amount}` : ""}.`;
 
-        // Properly trigger React's onChange to enable send button
-        const sendMessage = () => {
-          // Try multiple selectors for chat input
-          const selectors = [
-            'textarea[placeholder*="message" i]',
-            'textarea[placeholder*="type" i]',
-            'textarea[data-testid*="input"]',
-            'textarea',
-            'input[type="text"]'
-          ];
-
-          let chatInput: HTMLTextAreaElement | HTMLInputElement | null = null;
-          for (const selector of selectors) {
-            chatInput = document.querySelector(selector) as HTMLTextAreaElement | HTMLInputElement;
-            if (chatInput) break;
-          }
-
-          if (!chatInput) {
-            console.warn('Could not find chat input');
-            return;
-          }
-
-          // Focus first
-          chatInput.focus();
-
-          // Set value directly
-          chatInput.value = message;
-
-          // Create React-compatible input event
-          // Use InputEvent if available, otherwise fallback to Event
-          let inputEvent: Event;
-          try {
-            inputEvent = new InputEvent('input', {
-              bubbles: true,
-              cancelable: true,
-              data: message,
-              inputType: 'insertText'
-            });
-          } catch (e) {
-            // Fallback for browsers that don't support InputEvent constructor
-            inputEvent = new Event('input', { bubbles: true, cancelable: true });
-          }
-          chatInput.dispatchEvent(inputEvent);
-
-          // Also trigger change event
-          const changeEvent = new Event('change', { bubbles: true, cancelable: true });
-          chatInput.dispatchEvent(changeEvent);
-
-          // Try to access React's internal handlers
-          const reactFiber = (chatInput as any).__reactInternalInstance ||
-            (chatInput as any).__reactFiber$ ||
-            (chatInput as any)._reactInternalFiber;
-
-          if (reactFiber) {
-            const props = reactFiber.memoizedProps || reactFiber.currentProps;
-            if (props?.onChange) {
-              props.onChange({
-                target: chatInput,
-                currentTarget: chatInput,
-                bubbles: true,
-                cancelable: true,
-              });
-            }
-          }
-
-          // Wait a bit for React to process, then find and enable/click send button
-          setTimeout(() => {
-            const form = chatInput.closest('form');
-            let sendButton: HTMLButtonElement | null = null;
-
-            // Find send button with multiple strategies
-            if (form) {
-              // Strategy 1: Standard submit button
-              sendButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
-
-              // Strategy 2: Button near the input
-              if (!sendButton) {
-                const buttons = form.querySelectorAll('button');
-                for (const btn of Array.from(buttons)) {
-                  const btnEl = btn as HTMLButtonElement;
-                  if (btnEl.offsetParent !== null) {
-                    sendButton = btnEl;
-                    break;
-                  }
-                }
-              }
-            }
-
-            // Strategy 3: Find by aria-label or data attributes
-            if (!sendButton) {
-              sendButton = document.querySelector(
-                'button[aria-label*="send" i], button[aria-label*="submit" i], button[data-testid*="send"], button[data-testid*="submit"]'
-              ) as HTMLButtonElement;
-            }
-
-            if (sendButton) {
-              // If button is disabled, try to enable it by removing disabled attribute
-              // This might work if CopilotKit just uses disabled attribute
-              if (sendButton.disabled) {
-                sendButton.removeAttribute('disabled');
-                sendButton.disabled = false;
-              }
-
-              // Click the button if it's now enabled
-              if (!sendButton.disabled) {
-                sendButton.click();
-                return;
-              }
-            }
-
-            // Fallback: Try Enter key
-            const enterEvent = new KeyboardEvent('keydown', {
-              key: 'Enter',
-              code: 'Enter',
-              keyCode: 13,
-              which: 13,
-              bubbles: true,
-              cancelable: true,
-            });
-            chatInput.dispatchEvent(enterEvent);
-
-            // Also try form submit as last resort
-            if (form) {
-              const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-              form.dispatchEvent(submitEvent);
-            }
-          }, 150);
-        };
-
         // Small delay to ensure DOM is ready
-        setTimeout(sendMessage, 50);
+        setTimeout(() => sendChatMessage(message, "[TransactionGrid]"), 50);
       };
 
       return <TransactionGrid key={callInfo.callId} transactions={transactions} onSupportClick={handleSupportClick} />;
@@ -1010,93 +799,8 @@ export function RemittanceWidgets() {
                 const payoutMethod = account.nickname || account.accountName;
                 const message = `Generate a quote to send ${amount} ZAR to ${fullName} via ${payoutMethod}`;
                 
-                // Function to send message
-                const sendMessage = () => {
-                  const selectors = [
-                    'textarea[placeholder*="message" i]',
-                    'textarea[placeholder*="type" i]',
-                    'textarea[data-testid*="input"]',
-                    'textarea',
-                    'input[type="text"]'
-                  ];
-
-                  let chatInput: HTMLTextAreaElement | HTMLInputElement | null = null;
-                  for (const selector of selectors) {
-                    chatInput = document.querySelector(selector) as HTMLTextAreaElement | HTMLInputElement;
-                    if (chatInput) break;
-                  }
-
-                  if (!chatInput) {
-                    console.warn('[RecipientListCard] Could not find chat input');
-                    return;
-                  }
-
-                  // Focus and set value
-                  chatInput.focus();
-                  chatInput.value = message;
-
-                  // Trigger input event for React
-                  const inputEvent = new InputEvent('input', {
-                    bubbles: true,
-                    cancelable: true,
-                    data: message,
-                    inputType: 'insertText'
-                  });
-                  chatInput.dispatchEvent(inputEvent);
-
-                  // Trigger change event
-                  const changeEvent = new Event('change', { bubbles: true });
-                  chatInput.dispatchEvent(changeEvent);
-
-                  // Try clicking send button with retries (wait for React to enable it)
-                  let attempts = 0;
-                  const maxAttempts = 20; // Increased attempts
-                  const tryClickSend = () => {
-                    // Try multiple selectors to find the send button
-                    const selectors = [
-                      'button[type="submit"]',
-                      'button[aria-label*="send" i]',
-                      'button[aria-label*="submit" i]',
-                      'form button[type="button"]',
-                      'form button:not([type="button"]):not([type="reset"])',
-                      '[data-testid*="send"]'
-                    ];
-
-                    let sendButton: HTMLButtonElement | null = null;
-                    for (const selector of selectors) {
-                      const btn = document.querySelector(selector) as HTMLButtonElement;
-                      if (btn && btn.offsetParent !== null) { // Check if visible
-                        sendButton = btn;
-                        console.log(`[RecipientListCard] Found button with selector: ${selector}`, btn);
-                        break;
-                      }
-                    }
-
-                    if (sendButton) {
-                      console.log(`[RecipientListCard] Attempt ${attempts + 1}: Button disabled=${sendButton.disabled}`);
-                      if (!sendButton.disabled) {
-                        console.log('[RecipientListCard] ✅ Clicking send button');
-                        sendButton.click();
-                        return true;
-                      }
-                    } else {
-                      console.warn(`[RecipientListCard] Attempt ${attempts + 1}: Send button not found`);
-                    }
-                    
-                    attempts++;
-                    if (attempts < maxAttempts) {
-                      setTimeout(tryClickSend, 150); // Increased delay
-                    } else {
-                      console.warn('[RecipientListCard] ❌ Send button not enabled/found after all retries');
-                    }
-                    return false;
-                  };
-                  
-                  setTimeout(tryClickSend, 200); // Increased initial delay
-                };
-
-                // Execute immediately
-                setTimeout(sendMessage, 50);
+                // Execute after a short delay
+                setTimeout(() => sendChatMessage(message, "[RecipientListCard]"), 50);
               }}
             />
           </div>
@@ -1152,95 +856,8 @@ export function RemittanceWidgets() {
                 const recipientName = parsedResult.recipientName || "the recipient";
                 const message = `Yes, proceed with the transfer to ${recipientName}`;
                 
-                // Function to send message
-                const sendMessage = () => {
-                  const selectors = [
-                    'textarea[placeholder*="message" i]',
-                    'textarea[placeholder*="type" i]',
-                    'textarea[data-testid*="input"]',
-                    'textarea',
-                    'input[type="text"]'
-                  ];
-
-                  let chatInput: HTMLTextAreaElement | HTMLInputElement | null = null;
-                  for (const selector of selectors) {
-                    chatInput = document.querySelector(selector) as HTMLTextAreaElement | HTMLInputElement;
-                    if (chatInput) break;
-                  }
-
-                  if (!chatInput) {
-                    console.warn('[QuoteCard] Could not find chat input');
-                    return;
-                  }
-
-                  // Focus and set value
-                  chatInput.focus();
-                  chatInput.value = message;
-
-                  // Trigger input event for React
-                  const inputEvent = new InputEvent('input', {
-                    bubbles: true,
-                    cancelable: true,
-                    data: message,
-                    inputType: 'insertText'
-                  });
-                  chatInput.dispatchEvent(inputEvent);
-
-                  // Trigger change event
-                  const changeEvent = new Event('change', { bubbles: true });
-                  chatInput.dispatchEvent(changeEvent);
-
-                  // Try clicking send button with retries (wait for React to enable it)
-                  let attempts = 0;
-                  const maxAttempts = 20; // Increased attempts
-                  const tryClickSend = () => {
-                    // Try multiple selectors to find the send button
-                    const selectors = [
-                      'button[type="submit"]',
-                      'button[aria-label*="send" i]',
-                      'button[aria-label*="submit" i]',
-                      'form button[type="button"]',
-                      'form button:not([type="button"]):not([type="reset"])',
-                      '[data-testid*="send"]'
-                    ];
-
-                    let sendButton: HTMLButtonElement | null = null;
-                    for (const selector of selectors) {
-                      const btn = document.querySelector(selector) as HTMLButtonElement;
-                      if (btn && btn.offsetParent !== null) { // Check if visible
-                        sendButton = btn;
-                        console.log(`[QuoteCard] Found button with selector: ${selector}`, btn);
-                        break;
-                      }
-                    }
-
-                    if (sendButton) {
-                      console.log(`[QuoteCard] Attempt ${attempts + 1}: Button disabled=${sendButton.disabled}`);
-                      if (!sendButton.disabled) {
-                        console.log('[QuoteCard] ✅ Clicking send button');
-                        sendButton.click();
-                        return true;
-                      }
-                    } else {
-                      console.warn(`[QuoteCard] Attempt ${attempts + 1}: Send button not found`);
-                    }
-                    
-                    attempts++;
-                    if (attempts < maxAttempts) {
-                      setTimeout(tryClickSend, 150); // Increased delay
-                    } else {
-                      console.warn('[QuoteCard] ❌ Send button not enabled/found after all retries');
-                    }
-                    return false;
-                  };
-                  
-                  setTimeout(tryClickSend, 200); // Increased initial delay
-                  
-                  setTimeout(tryClickSend, 100);
-                };
-
-                // Execute immediately
-                setTimeout(sendMessage, 50);
+                // Execute after a short delay
+                setTimeout(() => sendChatMessage(message, "[QuoteCard]"), 50);
               }}
               onCancel={() => {
                 // Optionally send cancellation message
@@ -1290,92 +907,8 @@ export function RemittanceWidgets() {
                 // Programmatically send message to complete transaction with selected payment method
                 const message = `Complete the transaction with ${paymentMethodName} payment method`;
                 
-                // Function to send message
-                const sendMessage = () => {
-                  const selectors = [
-                    'textarea[placeholder*="message" i]',
-                    'textarea[placeholder*="type" i]',
-                    'textarea[data-testid*="input"]',
-                    'textarea',
-                    'input[type="text"]'
-                  ];
-
-                  let chatInput: HTMLTextAreaElement | HTMLInputElement | null = null;
-                  for (const selector of selectors) {
-                    chatInput = document.querySelector(selector) as HTMLTextAreaElement | HTMLInputElement;
-                    if (chatInput) break;
-                  }
-
-                  if (!chatInput) {
-                    console.warn('[PaymentOptionsCard] Could not find chat input');
-                    return;
-                  }
-
-                  // Focus and set value
-                  chatInput.focus();
-                  chatInput.value = message;
-
-                  // Trigger input event for React
-                  const inputEvent = new InputEvent('input', {
-                    bubbles: true,
-                    cancelable: true,
-                    data: message,
-                    inputType: 'insertText'
-                  });
-                  chatInput.dispatchEvent(inputEvent);
-
-                  // Trigger change event
-                  const changeEvent = new Event('change', { bubbles: true });
-                  chatInput.dispatchEvent(changeEvent);
-
-                  // Try clicking send button with retries
-                  let attempts = 0;
-                  const maxAttempts = 20;
-                  const tryClickSend = () => {
-                    const buttonSelectors = [
-                      'button[type="submit"]',
-                      'button[aria-label*="send" i]',
-                      'button[aria-label*="submit" i]',
-                      'form button[type="button"]',
-                      'form button:not([type="button"]):not([type="reset"])',
-                      '[data-testid*="send"]'
-                    ];
-
-                    let sendButton: HTMLButtonElement | null = null;
-                    for (const selector of buttonSelectors) {
-                      const btn = document.querySelector(selector) as HTMLButtonElement;
-                      if (btn && btn.offsetParent !== null) {
-                        sendButton = btn;
-                        console.log(`[PaymentOptionsCard] Found button with selector: ${selector}`, btn);
-                        break;
-                      }
-                    }
-
-                    if (sendButton) {
-                      console.log(`[PaymentOptionsCard] Attempt ${attempts + 1}: Button disabled=${sendButton.disabled}`);
-                      if (!sendButton.disabled) {
-                        console.log('[PaymentOptionsCard] ✅ Clicking send button');
-                        sendButton.click();
-                        return true;
-                      }
-                    } else {
-                      console.warn(`[PaymentOptionsCard] Attempt ${attempts + 1}: Send button not found`);
-                    }
-                    
-                    attempts++;
-                    if (attempts < maxAttempts) {
-                      setTimeout(tryClickSend, 150);
-                    } else {
-                      console.warn('[PaymentOptionsCard] ❌ Send button not enabled/found after all retries');
-                    }
-                    return false;
-                  };
-                  
-                  setTimeout(tryClickSend, 200);
-                };
-
-                // Execute immediately
-                setTimeout(sendMessage, 50);
+                // Execute after a short delay
+                setTimeout(() => sendChatMessage(message, "[PaymentOptionsCard]"), 50);
               }}
             />
           </div>
