@@ -15,22 +15,27 @@ import {
 } from "lucide-react";
 
 interface QuoteData {
-  calculationId: string;
+  // Step 2 fields (from rate calculation)
+  calculationId?: string;  // Optional - from Step 2
   calculateId?: string;
-  sendingAmount: string;
+  sendingAmount?: string;
   sendingAmountInitial?: string;
-  recipientAmount: string;
+  recipientAmount?: string;
   recipientAmountInitial?: string;
-  rate: string;
+  rate?: string;
   rateInitial?: string;
-  reverseRate: string;
+  reverseRate?: string;
   reverseRateInitial?: string;
-  fees: string;
+  fees?: string;
   feesInitial?: string;
-  vat: string;
-  surcharges: string;
-  amountToPay: string;
+  vat?: string;
+  surcharges?: string;
+  amountToPay?: string;
   amountToPayInitial?: string;
+  // Step 3 fields (from quote generation)
+  transactionId?: string;  // New - from Step 3 (this is the quote ID)
+  transactionDate?: string;
+  expiryDate?: string;
   promocode?: string | null;
   // Additional fields from our tool
   recipientName?: string;
@@ -40,7 +45,7 @@ interface QuoteData {
 
 interface QuoteCardProps {
   quote: QuoteData;
-  onConfirm?: (calculationId: string) => void;
+  onConfirm?: (quoteId: string) => void;  // Changed from calculationId to quoteId
   onCancel?: () => void;
 }
 
@@ -59,13 +64,17 @@ export const QuoteCard: React.FC<QuoteCardProps> = ({
   onConfirm, 
   onCancel 
 }) => {
-  const sendingAmount = parseFloat(quote.sendingAmount);
-  const recipientAmount = parseFloat(quote.recipientAmount);
-  const rate = parseFloat(quote.rate);
-  const fees = parseFloat(quote.fees);
-  const vat = parseFloat(quote.vat);
-  const surcharges = parseFloat(quote.surcharges);
-  const totalToPay = parseFloat(quote.amountToPay);
+  // Parse amounts with fallbacks
+  const sendingAmount = parseFloat(quote.sendingAmount || '0');
+  const recipientAmount = parseFloat(quote.recipientAmount || '0');
+  const rate = parseFloat(quote.rate || '0');
+  const fees = parseFloat(quote.fees || '0');
+  const vat = parseFloat(quote.vat || '0');
+  const surcharges = parseFloat(quote.surcharges || '0');
+  const totalToPay = parseFloat(quote.amountToPay || '0');
+  
+  // The quote ID is transactionId (from Step 3)
+  const quoteId = quote.transactionId || quote.calculationId || 'N/A';
 
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-xl border-2 border-blue-200">
@@ -114,7 +123,7 @@ export const QuoteCard: React.FC<QuoteCardProps> = ({
           </div>
           <div className="text-right">
             <p className="font-bold">1 ZAR = ${rate.toFixed(4)} USD</p>
-            <p className="text-sm text-gray-500">1 USD = R{parseFloat(quote.reverseRate).toFixed(4)} ZAR</p>
+            <p className="text-sm text-gray-500">1 USD = R{parseFloat(quote.reverseRate || '0').toFixed(4)} ZAR</p>
           </div>
         </div>
 
@@ -186,7 +195,7 @@ export const QuoteCard: React.FC<QuoteCardProps> = ({
 
         {/* Quote ID for reference */}
         <div className="text-xs text-gray-500 text-center">
-          Quote ID: {quote.calculationId.substring(0, 16)}...
+          Quote ID: {quoteId.length > 16 ? quoteId.substring(0, 16) + '...' : quoteId}
         </div>
       </CardContent>
 
@@ -204,7 +213,7 @@ export const QuoteCard: React.FC<QuoteCardProps> = ({
           {onConfirm && (
             <Button 
               className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              onClick={() => onConfirm(quote.calculationId)}
+              onClick={() => onConfirm(quoteId)}
             >
               <CheckCircle className="h-4 w-4 mr-2" />
               Confirm & Send Money

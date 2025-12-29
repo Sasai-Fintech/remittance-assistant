@@ -233,7 +233,7 @@ def register_remittance_tools(mcp_server) -> None:
         return await fetch_recipients(page=page, count=count)
     
     @mcp_server.tool()
-    async def generate_remittance_quote(
+    async def calculate_rate_and_lock(
         recipient_name: str,
         payout_method: str,
         product_id: int,
@@ -246,14 +246,13 @@ def register_remittance_tools(mcp_server) -> None:
         receive: bool = False
     ) -> Dict[str, Any]:
         """
-        Generate a remittance quote with exchange rate, fees, and total amount breakdown.
+        Lock in exchange rate for selected vendor and generate calculationId.
         
-        This calculates the exact costs for sending money:
-        - Exchange rate (ZAR to USD/other currency)
-        - Transaction fees
-        - VAT/taxes
-        - Total amount to pay
-        - Amount recipient will receive
+        This is Step 2 in the remittance flow: After user selects a delivery method
+        (e.g., EcoCash, Cash Pickup) from the exchange rate options, this function
+        locks in that rate and generates a calculationId.
+        
+        The calculationId will be used in the next step to generate the actual quote.
         
         Common values:
         - South Africa → Zimbabwe
@@ -276,11 +275,11 @@ def register_remittance_tools(mcp_server) -> None:
             receive: If True, amount is recipient amount; if False, sender amount
         
         Returns:
-            dict: Quote with calculationId, rates, fees, and amounts
+            dict: Rate calculation with calculationId, rates, fees, and amounts
         """
         from remittance.quotes import calculate_remittance_quote
         
-        # Add recipient and payout method to the response for UI display
+        # Call Step 2: Lock rate and get calculationId
         result = await calculate_remittance_quote(
             sending_country_id=sending_country_id,
             receiving_country_id=receiving_country_id,
@@ -301,29 +300,41 @@ def register_remittance_tools(mcp_server) -> None:
         return result
     
     @mcp_server.tool()
-    async def execute_remittance_transaction(
+    async def generate_remittance_quote(
         beneficiary_id: str,
         calculation_id: str,
         recipient_name: str,
         payout_method: str,
+        # All rate calculation fields to pass through to widget
         sending_amount: str,
         recipient_amount: str,
+        rate: str,
+        fees: str,
+        vat: str,
+        amount_to_pay: str,
+        reverse_rate: Optional[str] = None,
+        surcharges: Optional[str] = "0.00",
+        # Transaction parameters
         payment_method_id: str = "10-I",
         reason_for_transfer: str = "SOWF",
         source_of_funds: str = "SAL"
     ) -> Dict[str, Any]:
         """
-        Execute a remittance transaction after user confirms the quote.
+        Generate quote using calculationId from rate calculation.
         
-        This completes the money transfer by processing the payment
-        and creating the transaction record.
+        This is Step 3 in the remittance flow: Uses the calculationId from Step 2
+        to generate a quote and returns a transactionId.
         
-        CRITICAL: beneficiary_id must be from the ACCOUNT that matches the quote's productId.
+        CRITICAL: This tool creates the actual quote on the backend and returns
+        a transactionId. All rate calculation data (from Step 2) must be passed
+        through to this tool so it can be displayed in the QuoteCard widget.
+        
+        beneficiary_id MUST be from the ACCOUNT that matches the product!
         
         HOW TO SELECT THE CORRECT ACCOUNT:
-        1. From the quote response, get the productId (e.g., 629 for EcoCash)
+        1. From the rate calculation response, get the productId
         2. From the recipient's accounts array, find the account where:
-           account.linkedProducts[].productId == quote.productId
+           account.linkedProducts[].productId == productId
         3. Use that account's "id" field as the beneficiary_id
         
         Example from get_recipient_list response:
@@ -332,12 +343,12 @@ def register_remittance_tools(mcp_server) -> None:
           "firstName": "John",
           "accounts": [
             {
-              "id": "77192529",  // <-- USE THIS if quote.productId = 629
+              "id": "77192529",  // <-- USE THIS if productId = 629
               "beneficiaryPayoutMethod": "EcoCash",
               "linkedProducts": [{"productId": 629, "accountName": "EcoCash"}]
             },
             {
-              "id": "77192530",  // <-- USE THIS if quote.productId = 12
+              "id": "77192530",  // <-- USE THIS if productId = 12
               "beneficiaryPayoutMethod": "Cash Pickup",
               "linkedProducts": [{"productId": 12, "accountName": "Cash"}]
             }
@@ -350,28 +361,134 @@ def register_remittance_tools(mcp_server) -> None:
         - Payment Method: "10-I" (default)
         
         Args:
-            beneficiary_id: Account ID where account.linkedProducts[].productId matches quote.productId
-            calculation_id: Quote calculation ID (from generate_remittance_quote)
-            recipient_name: Recipient's name (for display in receipt)
+            beneficiary_id: Account ID where account.linkedProducts[].productId matches productId
+            calculation_id: Calculation ID from calculate_rate_and_lock (Step 2)
+            recipient_name: Recipient's name (for display in quote)
             payout_method: Payout method name (for display)
-            sending_amount: Amount sender is paying (for display)
-            recipient_amount: Amount recipient receives (for display)
+            sending_amount: Amount sender is paying (from Step 2)
+            recipient_amount: Amount recipient receives (from Step 2)
+            rate: Exchange rate (from Step 2)
+            fees: Transaction fees (from Step 2)
+            vat: VAT amount (from Step 2)
+            amount_to_pay: Total amount to pay (from Step 2)
+            reverse_rate: Reverse exchange rate (optional, from Step 2)
+            surcharges: Surcharges (optional, from Step 2)
             payment_method_id: Payment method ID (default: "10-I")
             reason_for_transfer: Reason code (default: "SOWF")
             source_of_funds: Source code (default: "SAL")
         
         Returns:
-            dict: Transaction receipt with transactionId, dates, and display info
+            dict: Quote with transactionId AND all rate calculation data for display
         """
-        from remittance.transactions import execute_remittance_transaction as execute_tx
+        from remittance.quotes import generate_remittance_quote_from_calculation
         
-        # Execute the transaction
-        result = await execute_tx(
+        # Call Step 3: Generate quote and get transactionId
+        result = await generate_remittance_quote_from_calculation(
             beneficiary_id=beneficiary_id,
             calculation_id=calculation_id,
             payment_method_id=payment_method_id,
             reason_for_transfer=reason_for_transfer,
             source_of_funds=source_of_funds
+        )
+        
+        # Enrich response with ALL rate calculation data AND display info for the quote widget
+        if result and not result.get("error"):
+            result["recipientName"] = recipient_name
+            result["payoutMethod"] = payout_method
+            result["calculationId"] = calculation_id  # Keep for reference
+            # Pass through all rate calculation data from Step 2
+            result["sendingAmount"] = sending_amount
+            result["recipientAmount"] = recipient_amount
+            result["rate"] = rate
+            result["fees"] = fees
+            result["vat"] = vat
+            result["amountToPay"] = amount_to_pay
+            if reverse_rate:
+                result["reverseRate"] = reverse_rate
+            if surcharges:
+                result["surcharges"] = surcharges
+        
+        return result
+    
+    @mcp_server.tool()
+    async def get_payment_options(
+        service_type: str = "ZAPersonPaymentOptions"
+    ) -> Dict[str, Any]:
+        """
+        Get available payment options for completing the transaction.
+        
+        This is Step 4a in the remittance flow: After user confirms the quote,
+        show them the available payment methods (e.g., Bank Transfer, Card, Wallet)
+        so they can select how to pay.
+        
+        Call this BEFORE execute_remittance_transaction.
+        
+        Args:
+            service_type: Service type for payment options (default: "ZAPersonPaymentOptions")
+        
+        Returns:
+            dict: Payment options list with code, name, description, and icon for each method
+            
+        Example Response:
+            {
+                "paymentOptions": [
+                    {
+                        "code": "EFT",
+                        "name": "Electronic Funds Transfer",
+                        "description": "Bank transfer from your account"
+                    },
+                    {
+                        "code": "CARD",
+                        "name": "Debit/Credit Card",
+                        "description": "Pay with your card"
+                    }
+                ]
+            }
+        """
+        from remittance.payments import get_payment_options as fetch_payment_options
+        return await fetch_payment_options(service_type=service_type)
+    
+    @mcp_server.tool()
+    async def execute_remittance_transaction(
+        transaction_id: str,
+        payment_method_code: str,
+        recipient_name: str,
+        payout_method: str,
+        sending_amount: str,
+        recipient_amount: str
+    ) -> Dict[str, Any]:
+        """
+        Complete/execute transaction using transactionId from quote and payment method code.
+        
+        This is Step 4 in the remittance flow: Uses PATCH to finalize the transaction
+        with ONLY the transactionId (from Step 3) and paymentMethodCode (from Step 4a).
+        
+        IMPORTANT: The PATCH /v1/transaction endpoint requires ONLY:
+        - transactionId from Step 3
+        - paymentMethodCode from Step 4a (user selected payment method)
+        
+        CRITICAL: payment_method_code MUST be from the payment options widget!
+        - User MUST select a payment method from Step 4a (get_payment_options)
+        - Extract the 'code' field from the selected payment option
+        - Examples: "eft", "cash", "card"
+        
+        Args:
+            transaction_id: Transaction ID from generate_remittance_quote (Step 3)
+            payment_method_code: Payment method CODE from user selection in Step 4a (e.g., "eft", "card", "cash")
+            recipient_name: Recipient's name (for display in receipt)
+            payout_method: Payout method name (for display)
+            sending_amount: Amount sender paid (for display)
+            recipient_amount: Amount recipient receives (for display)
+        
+        Returns:
+            dict: Final transaction receipt with confirmation and display info
+        """
+        from remittance.transactions import execute_remittance_transaction as execute_tx
+        
+        # Call Step 4: Complete the transaction with ONLY transactionId and paymentMethodCode
+        result = await execute_tx(
+            transaction_id=transaction_id,
+            payment_method_code=payment_method_code
         )
         
         # Enrich response with display info for the receipt widget
@@ -380,5 +497,14 @@ def register_remittance_tools(mcp_server) -> None:
             result["payoutMethod"] = payout_method
             result["sendingAmount"] = sending_amount
             result["recipientAmount"] = recipient_amount
+            result["transactionId"] = transaction_id  # Ensure it's in response
+            result["paymentMethodCode"] = payment_method_code  # Keep for reference
+            
+            # Highlight transactionUrl if present
+            transaction_url = result.get("transactionUrl")
+            if transaction_url:
+                result["actionRequired"] = True
+                result["actionUrl"] = transaction_url
+                result["actionMessage"] = "Please complete your payment by opening this URL"
         
         return result
