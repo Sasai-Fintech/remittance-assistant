@@ -81,7 +81,7 @@ export function PaymentOptionsCard({ options, onSelectPayment }: PaymentOptionsC
       <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
         <CardTitle className="text-2xl font-bold">💳 Select Payment Method</CardTitle>
         <CardDescription className="text-base">
-          Choose how you'd like to pay for this transfer
+          Choose how you&apos;d like to pay for this transfer
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6 space-y-3">
